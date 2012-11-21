@@ -29,6 +29,9 @@ def ReturnFindGene(meta,returndata):
         maxcount=6#the maximum number of hits we are going to report
         if 'count' in returndata:
             maxcount=int(returndata['count'])
+        reportAll=False
+        if 'reportall' in returndata:
+            reportAll=True
         foundmap={}
 
         #Note: we do this 2 times, first with pattern in start position, and second with pattern in any position if the first did not fill up the max match count
@@ -46,13 +49,16 @@ def ReturnFindGene(meta,returndata):
                 if len(names)<maxcount:
                     chromnrstr=row[1]
                     name=row[0]
-                    if name not in foundmap:
+                    ident=name
+                    if reportAll:
+                        ident+='_'+chromnrstr+' '+str(row[3])+' '+str(row[4])
+                    if ident not in foundmap:
                         names.append(name)
                         chroms.append(chromnrstr)
                         starts.append(row[2])
                         ends.append(row[3])
                         ids.append(row[4])
-                        foundmap[name]=1
+                        foundmap[ident]=1
             if len(names)>=maxcount:
                 trynr=99
 
