@@ -13,6 +13,7 @@ def ReturnFindGene(meta,returndata):
     starts=[]
     ends=[]
     ids=[]
+    descrs=[]
 
     #Detect to see if the pattern is actually a chromosome position
     if (":" in mypattern) and (len(mypattern)>4) and (mypattern[0:3]=="chr"):
@@ -39,7 +40,7 @@ def ReturnFindGene(meta,returndata):
             patternstr="{0}%".format(mypattern)
             if trynr==1:
                 patternstr="%{0}%".format(mypattern)
-            statement='SELECT fname, chromid, fstart, fstop,fid FROM {tablename} WHERE (ftype="gene") and (fname LIKE "{pattern}") or (fid LIKE "{pattern}") LIMIT {maxcount}'.format(
+            statement='SELECT fname, chromid, fstart, fstop,fid,fnames,descr FROM {tablename} WHERE (ftype="gene") and ((fname LIKE "{pattern}") or (fnames LIKE "{pattern}") or (descr LIKE "{pattern}") or (fid LIKE "{pattern}")) LIMIT {maxcount}'.format(
                 tablename=DQXDbTools.ToSafeIdentifier(returndata['table']),
                 pattern=patternstr,
                 maxcount=maxcount
@@ -58,6 +59,7 @@ def ReturnFindGene(meta,returndata):
                         starts.append(row[2])
                         ends.append(row[3])
                         ids.append(row[4])
+                        descrs.append(row[5]+';'+row[6])
                         foundmap[ident]=1
             if len(names)>=maxcount:
                 trynr=99
@@ -80,6 +82,7 @@ def ReturnFindGene(meta,returndata):
                     pos=row[2]
                     starts.append(pos)
                     ends.append(pos)
+                    descrs.append('')
 
     valcoder=B64.ValueListCoder()
     returndata['Hits']=valcoder.EncodeStrings(names)
@@ -87,6 +90,7 @@ def ReturnFindGene(meta,returndata):
     returndata['Starts']=valcoder.EncodeIntegers(starts)
     returndata['Ends']=valcoder.EncodeIntegers(ends)
     returndata['IDs']=valcoder.EncodeStrings(ids)
+    returndata['Descrs']=valcoder.EncodeStrings(descrs)
 
     #TODO: pass 'hasmore' flag if list is limited, and make client interpret this
 
