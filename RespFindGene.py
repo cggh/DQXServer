@@ -12,6 +12,7 @@ def ReturnFindGene(meta,returndata):
     chroms=[]
     starts=[]
     ends=[]
+    ids=[]
 
     #Detect to see if the pattern is actually a chromosome position
     if (":" in mypattern) and (len(mypattern)>4) and (mypattern[0:3]=="chr"):
@@ -26,6 +27,8 @@ def ReturnFindGene(meta,returndata):
     else:
 
         maxcount=6#the maximum number of hits we are going to report
+        if 'count' in returndata:
+            maxcount=int(returndata['count'])
         foundmap={}
 
         #Note: we do this 2 times, first with pattern in start position, and second with pattern in any position if the first did not fill up the max match count
@@ -33,7 +36,7 @@ def ReturnFindGene(meta,returndata):
             patternstr="{0}%".format(mypattern)
             if trynr==1:
                 patternstr="%{0}%".format(mypattern)
-            statement='SELECT fname, chromid, fstart, fstop FROM {tablename} WHERE (ftype="gene") and (fname LIKE "{pattern}") LIMIT {maxcount}'.format(
+            statement='SELECT fname, chromid, fstart, fstop,fid FROM {tablename} WHERE (ftype="gene") and (fname LIKE "{pattern}") or (fid LIKE "{pattern}") LIMIT {maxcount}'.format(
                 tablename=DQXDbTools.ToSafeIdentifier(returndata['table']),
                 pattern=patternstr,
                 maxcount=maxcount
@@ -48,6 +51,7 @@ def ReturnFindGene(meta,returndata):
                         chroms.append(chromnrstr)
                         starts.append(row[2])
                         ends.append(row[3])
+                        ids.append(row[4])
                         foundmap[name]=1
             if len(names)>=maxcount:
                 trynr=99
@@ -76,6 +80,7 @@ def ReturnFindGene(meta,returndata):
     returndata['Chroms']=valcoder.EncodeStrings(chroms)
     returndata['Starts']=valcoder.EncodeIntegers(starts)
     returndata['Ends']=valcoder.EncodeIntegers(ends)
+    returndata['IDs']=valcoder.EncodeStrings(ids)
 
     #TODO: pass 'hasmore' flag if list is limited, and make client interpret this
 
