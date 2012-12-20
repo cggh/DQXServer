@@ -44,7 +44,8 @@ def ReturnPagedQuery(meta,returndata):
     sqlquery="SELECT {0} FROM {1}".format(','.join([x['Name'] for x in mycolumns]), mytablename)
     if len(whc.querystring_params)>0:
         sqlquery+=" WHERE {0}".format(whc.querystring_params)
-    sqlquery+=" ORDER BY {0}".format(DQXDbTools.CreateOrderByStatement(myorderfield,sortreverse))
+    if len(myorderfield)>0:
+        sqlquery+=" ORDER BY {0}".format(DQXDbTools.CreateOrderByStatement(myorderfield,sortreverse))
     sqlquery+=" LIMIT {0}, {1}".format(rownr1,rownr2-rownr1+1)
 
     print('################################################')

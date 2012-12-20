@@ -9,6 +9,7 @@ def ReturnQuery(meta,returndata):
     mytablename=DQXDbTools.ToSafeIdentifier(returndata['tbname'])
     encodedquery=returndata['qry']
     myorderfield=DQXDbTools.ToSafeIdentifier(returndata['order'])
+    print('###orderfield: '+myorderfield)
 
     mycolumns=DQXDbTools.ParseColumnEncoding(returndata['collist'])#!!!todo: verify that these column names are actual table columns
 
@@ -29,7 +30,8 @@ def ReturnQuery(meta,returndata):
     if len(whc.querystring_params)>0:
         sqlquery+=" WHERE {0}".format(whc.querystring_params)
 
-    sqlquery+=" ORDER BY {0}".format(myorderfield)
+    if len(myorderfield)>0:
+        sqlquery+=" ORDER BY {0}".format(myorderfield)
 
     cur.execute(sqlquery,whc.queryparams)
 
