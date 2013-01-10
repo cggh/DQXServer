@@ -59,7 +59,7 @@ def ReturnFindGene(meta,returndata):
                         starts.append(row[2])
                         ends.append(row[3])
                         ids.append(row[4])
-                        descrs.append(row[5]+';'+row[6])
+                        descrs.append(str(row[5])+';'+str(row[6]))
                         foundmap[ident]=1
             if len(names)>=maxcount:
                 trynr=99
