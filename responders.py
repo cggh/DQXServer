@@ -6,6 +6,7 @@ import RespQuery
 import RespPagedQuery
 import RespRecordInfo
 import RespSnpInfo
+import RespGetFile
 import SummCreate
 
 import B64
@@ -27,6 +28,7 @@ def GetRespList():
     rslst['findgene']=RespFindGene.ReturnFindGene
     rslst['summinfo']=SummCreate.ReturnSummInfo
     rslst['snpinfo']=RespSnpInfo.ReturnSnpInfo
+    rslst['getfile']=RespGetFile.ReturnFile
     return rslst
 
 
