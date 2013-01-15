@@ -7,7 +7,17 @@ import DQXEncoder
 import os
 
 sourcedir='C:/Data/Test/Genome/SnpDataCross'
-dataid="3d7xHb3-qcPlusSamples-01"
+#dataid="3d7xHb3-qcPlusSamples-01"
+#dataid="7g8xGb4-allSamples-01"
+dataid="Hb3xDd2-allSamples-01"
+
+if len(sys.argv)==1:
+    dataid=sys.argv[0]
+    sourcedir='.'
+
+print('dataid='+str(dataid))
+
+
 
 
 class DataProvider_VCF:
