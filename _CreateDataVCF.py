@@ -6,6 +6,10 @@ import simplejson
 import DQXEncoder
 import os
 
+sourcedir='C:/Data/Test/Genome/SnpDataCross'
+dataid="svar1"
+
+
 class DataProvider_VCF:
     def __init__(self,ifilename,settings):
         self.infocomps=settings['InfoComps']
@@ -71,73 +75,76 @@ class DataProvider_VCF:
 
         while True:
             line=inputfile.readline().rstrip('\n')
+            if not(line):
+                break
             linecomps=line.split('\t')
-            rs={}
-            rs['chrom']=linecomps[self.colnr_chrom]
-            rs['pos']=int(linecomps[self.colnr_pos])
-            if linecomps[self.colnr_qual]=='.':
-                rs['qual']=1
-            else:
-                rs['qual']=float(linecomps[self.colnr_qual])
-            accept=True
-            if (self.PositiveQualityOnly) and (not(rs['qual']>0)): accept=False
-            if accept:
-
-                #parse info field data
-                infodict={}
-                for comp in linecomps[self.colnr_info].split(';'):
-                    if '=' in comp:
-                        key,val=comp.split('=')
-                        infodict[key]=val.split(',')
-                    else:
-                        infodict[comp]=[1]
-
-                #Get all the Snp Position info fields
-                for infocomp in self.infocomps:
-                    vl=None
-                    if not(infocomp['inInfo']):
-                        if 'colNr' in infocomp:
-                            vl=linecomps[infocomp['colNr']]
-                    else:
-                        vl=infodict[infocomp['fieldKey']][infocomp['keyIndex']]
-                    if 'Categories' in infocomp:
-                        if vl in infocomp['Categories']:
-                            vl=infocomp['Categories'][vl]
-                        else:
-                            if '*' in infocomp['Categories']:
-                                vl=infocomp['Categories']['*']
-                            else:
-                                raise Exception('Unknown coding ')
-                    rs[infocomp['ID']]=vl
-
-                if (self.FilterPassedOnly) and not(rs['Filtered']): accept=False
+            if len(linecomps)>1:
+                rs={}
+                rs['chrom']=linecomps[self.colnr_chrom]
+                rs['pos']=int(linecomps[self.colnr_pos])
+                if linecomps[self.colnr_qual]=='.':
+                    rs['qual']=1
+                else:
+                    rs['qual']=float(linecomps[self.colnr_qual])
+                accept=True
+                if (self.PositiveQualityOnly) and (not(rs['qual']>0)): accept=False
                 if accept:
 
-                    #parse format identifier
-                    formatcomps=linecomps[self.colnr_format].split(':')
-                    samplecompposits=[]
-                    for samplecompnr in range(len(self.samplecomps)):
-                        thesamplecomppos=-1
-                        for fcompnr in range(len(formatcomps)):
-                            if self.samplecomps[samplecompnr]['id']==formatcomps[fcompnr]:
-                                thesamplecomppos=fcompnr
-                        #if thesamplecomppos<0: raise Exception('unable to find format component {0} in line {1}'.format(self.samplecomps[samplecompnr]['id'],line))
-                        samplecompposits.append(thesamplecomppos)
+                    #parse info field data
+                    infodict={}
+                    for comp in linecomps[self.colnr_info].split(';'):
+                        if '=' in comp:
+                            key,val=comp.split('=')
+                            infodict[key]=val.split(',')
+                        else:
+                            infodict[comp]=[1]
 
-                    #parse per-sample data
-                    scolnr=self.colnr_format
-                    for sid in self.sampleids:
-                        scolnr+=1
-                        samplecompvals=[x.split(',') for x in linecomps[scolnr].split(':')]
-                        scompnr=0
-                        for scomp in self.samplecomps:
-                            theval=0
-                            if samplecompposits[scompnr]>=0:
-                                theval=samplecompvals[samplecompposits[scompnr]][scomp['sub']]
-                            rs[sid+'_'+scomp['name']]=theval
-                            scompnr+=1
+                    #Get all the Snp Position info fields
+                    for infocomp in self.infocomps:
+                        vl=None
+                        if not(infocomp['inInfo']):
+                            if 'colNr' in infocomp:
+                                vl=linecomps[infocomp['colNr']]
+                        else:
+                            vl=infodict[infocomp['fieldKey']][infocomp['keyIndex']]
+                        if 'Categories' in infocomp:
+                            if vl in infocomp['Categories']:
+                                vl=infocomp['Categories'][vl]
+                            else:
+                                if '*' in infocomp['Categories']:
+                                    vl=infocomp['Categories']['*']
+                                else:
+                                    raise Exception('Unknown coding ')
+                        rs[infocomp['ID']]=vl
 
-                    yield rs
+                    if (self.FilterPassedOnly) and not(rs['Filtered']): accept=False
+                    if accept:
+
+                        #parse format identifier
+                        formatcomps=linecomps[self.colnr_format].split(':')
+                        samplecompposits=[]
+                        for samplecompnr in range(len(self.samplecomps)):
+                            thesamplecomppos=-1
+                            for fcompnr in range(len(formatcomps)):
+                                if self.samplecomps[samplecompnr]['id']==formatcomps[fcompnr]:
+                                    thesamplecomppos=fcompnr
+                            #if thesamplecomppos<0: raise Exception('unable to find format component {0} in line {1}'.format(self.samplecomps[samplecompnr]['id'],line))
+                            samplecompposits.append(thesamplecomppos)
+
+                        #parse per-sample data
+                        scolnr=self.colnr_format
+                        for sid in self.sampleids:
+                            scolnr+=1
+                            samplecompvals=[x.split(',') for x in linecomps[scolnr].split(':')]
+                            scompnr=0
+                            for scomp in self.samplecomps:
+                                theval=0
+                                if samplecompposits[scompnr]>=0:
+                                    theval=samplecompvals[samplecompposits[scompnr]][scomp['sub']]
+                                rs[sid+'_'+scomp['name']]=theval
+                                scompnr+=1
+
+                        yield rs
 
         inputfile.close()
 
@@ -176,21 +183,11 @@ def GetWriteFile(chrom,id):
         lastchr=chrom
     fid=chrom+'_'+id
     if not(fid in files):
-        files[fid]=open('{0}/{1}/{2}.txt'.format(destdir,dataid,fid),'w')
+        files[fid]=open('{0}/{1}/{2}.txt'.format(sourcedir,dataid,fid),'w')
     return files[fid]
 
 
 
-
-
-#fileid='3d7xHb3-qcPlusSamples-0.1'
-#fileid='7g8xGb4-allSamples-0.1'
-#fileid='Hb3xDd2-allSamples-0.1'
-
-
-sourcedir='C:/Data/Genomes/PfCrosses/InputData/Snps'
-destdir='C:/Data/Test/Genome'
-dataid="test01"
 
 #Load settings
 settingsFile=open('{0}/{1}.txt'.format(sourcedir,dataid))
@@ -217,9 +214,12 @@ f.close()
 fl=DataProvider_VCF(filename,settings)
 
 #Create output directory
-outputdir=destdir+'/'+dataid
+outputdir=sourcedir+'/'+dataid
 if not os.path.exists(outputdir):
     os.makedirs(outputdir)
+#remove all output files that correspond to this configuration
+for filename in os.listdir(outputdir):
+   os.remove(os.path.join(outputdir,filename))
 
 
 print('=============== Report Snp Position Information components ===================')
@@ -246,16 +246,24 @@ for infocomp in settings['InfoComps']:
 ofile.write('SnpPositionFields='+simplejson.dumps(infocompinfo)+'\n')
 ofile.close()
 
+limitcount=None
+if ('LimitCount' in settings):
+    limitcount=settings['LimitCount']
+    if limitcount<0: limitcount=None
+
+
 
 b64=B64.B64()
 nr=0
 for rw in fl.GetRowIterator():
 
     chromname=rw['chrom']
-    if chromname[:3]=='MAL':
-        chromnr=int(chromname[3:])
-        chromname=str(chromnr).zfill(2)
-        chromname='Pf3D7_'+chromname
+
+    if ('ConvertChromoNamesMAL2Pf3D7' in settings) and (settings['ConvertChromoNamesMAL2Pf3D7']):
+        if chromname[:3]=='MAL':
+            chromnr=int(chromname[3:])
+            chromname=str(chromnr).zfill(2)
+            chromname='Pf3D7_'+chromname
 
     GetWriteFile(chromname,'pos').write('{0}\n'.format(rw['pos']))
 
@@ -286,6 +294,7 @@ for rw in fl.GetRowIterator():
     nr+=1
     if nr%1000==0:
         print('Processed: '+str(nr))
-    if nr==30000:
-        break
+    if (limitcount is not None) and (nr>=limitcount):
+       break
 
+print('============= Completed! =========================')
