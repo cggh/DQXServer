@@ -7,7 +7,7 @@ import DQXEncoder
 import os
 
 sourcedir='C:/Data/Test/Genome/SnpDataCross'
-dataid="svar1"
+dataid="3d7xHb3-qcPlusSamples-01"
 
 
 class DataProvider_VCF:
@@ -20,11 +20,19 @@ class DataProvider_VCF:
         inputfile=open(self.inputfilename,'r')
         headerended=False
         self.headerlen=0
+        self.parents=[]
         while not(headerended):
             self.headerlen+=1
             line=inputfile.readline().rstrip('\n')
             if (line[0]=='#') and (line[1]!='#'):
                 headerended=True
+            else:
+                tokens=line[2:].split('=',1)
+                if len(tokens)==2:
+                    key=tokens[0]
+                    content=tokens[1]
+                    if key=='PARENT':
+                        self.parents.append(content)
 
         #parse header line
         line=line[1:]
@@ -244,6 +252,8 @@ for infocomp in settings['InfoComps']:
     infoinfo['DataType']=infocomp['theEncoder'].getDataType()
     infocompinfo.append(infoinfo)
 ofile.write('SnpPositionFields='+simplejson.dumps(infocompinfo)+'\n')
+if len(fl.parents)>0:
+    ofile.write('Parents='+'\t'.join(fl.parents)+'\n')
 ofile.close()
 
 limitcount=None
