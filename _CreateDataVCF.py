@@ -2,25 +2,16 @@ import math
 import random
 import B64
 import sys
-
-
-if False:
-    f=open('C:/Data/Genomes/PfCrosses/InputData/Snps/3d7xHb3-qcPlusSamples-0.1.vcf','r')
-    st=''
-    for i in range(1000):
-        st+=f.readline()
-    f.close()
-    f=open('C:/Data/Genomes/top.txt','w')
-    f.write(st)
-    f.close()
-    sys.exit()
+import simplejson
+import DQXEncoder
+import os
 
 class DataProvider_VCF:
     def __init__(self,ifilename,settings):
-
-        self.infocomps=settings['infocomps']
-        self.samplecomps=settings['samplecomps']
-
+        self.infocomps=settings['InfoComps']
+        self.samplecomps=settings['SampleComps']
+        self.FilterPassedOnly=settings['FilterPassedOnly']
+        self.PositiveQualityOnly=settings['PositiveQualityOnly']
         self.inputfilename=ifilename
         inputfile=open(self.inputfilename,'r')
         headerended=False
@@ -37,30 +28,41 @@ class DataProvider_VCF:
         self.colnr_chrom=-1
         self.colnr_pos=-1
         self.colnr_qual=-1
-        self.colnr_ref=-1
-        self.colnr_alt=-1
         self.colnr_format=-1
         self.colnr_info=-1
-        self.colnr_filter=-1
+        headercompdict={}
         for compnr in range(len(headercomps)):
+            headercompdict[headercomps[compnr]]=compnr
             if headercomps[compnr]=='CHROM': self.colnr_chrom=compnr
             if headercomps[compnr]=='POS': self.colnr_pos=compnr
             if headercomps[compnr]=='QUAL': self.colnr_qual=compnr
-            if headercomps[compnr]=='REF': self.colnr_ref=compnr
-            if headercomps[compnr]=='ALT': self.colnr_alt=compnr
             if headercomps[compnr]=='FORMAT': self.colnr_format=compnr
             if headercomps[compnr]=='INFO': self.colnr_info=compnr
-            if headercomps[compnr]=='FILTER': self.colnr_filter=compnr
 
         if self.colnr_chrom<0: raise Exception('Field CHROM not found')
         if self.colnr_pos<0: raise Exception('Field CHROM not found')
         if self.colnr_qual<0: raise Exception('Field QUAL not found')
         if self.colnr_format<0: raise Exception('Field FORMAT not found')
-        if self.colnr_filter<0: raise Exception('Field FILTER not found')
 
         self.sampleids=headercomps[self.colnr_format+1:]
 
         inputfile.close()
+
+        ## Map Snp info components to columns in the file
+        for infocomp in self.infocomps:
+            sourcecomps=infocomp['Source'].split(':')
+            if sourcecomps[0]=='INFO':
+                infocomp['inInfo']=True
+                infocomp['colNr']=self.colnr_info
+                infocomp['fieldKey']=sourcecomps[1]
+                infocomp['keyIndex']=int(sourcecomps[2])
+                pass
+            else:
+                infocomp['inInfo']=False
+                if len(infocomp['Source'])>0:
+                    infocomp['colNr']=headercompdict[infocomp['Source']]
+                pass
+
 
     def GetRowIterator(self):
         inputfile=open(self.inputfilename,'r')
@@ -69,20 +71,17 @@ class DataProvider_VCF:
 
         while True:
             line=inputfile.readline().rstrip('\n')
-            if not(line):
-                break
             linecomps=line.split('\t')
             rs={}
             rs['chrom']=linecomps[self.colnr_chrom]
             rs['pos']=int(linecomps[self.colnr_pos])
-            rs['ref']=linecomps[self.colnr_ref]
-            rs['alt']=linecomps[self.colnr_alt]
             if linecomps[self.colnr_qual]=='.':
                 rs['qual']=1
             else:
                 rs['qual']=float(linecomps[self.colnr_qual])
-            rs['filter']=linecomps[self.colnr_filter]=='PASS'
-            if rs['qual']>0:
+            accept=True
+            if (self.PositiveQualityOnly) and (not(rs['qual']>0)): accept=False
+            if accept:
 
                 #parse info field data
                 infodict={}
@@ -93,42 +92,53 @@ class DataProvider_VCF:
                     else:
                         infodict[comp]=[1]
 
+                #Get all the Snp Position info fields
                 for infocomp in self.infocomps:
-                    vl=0
-                    if infocomp['id'] in infodict:
-                        vl=infodict[infocomp['id']][infocomp['sub']]
-                    if 'cats' in infocomp:
-                        vl=infocomp['cats'][vl]
-                        if vl is None:
-                            raise Exception('Unknown coding ')
-                    rs[infocomp['name']]=vl
+                    vl=None
+                    if not(infocomp['inInfo']):
+                        if 'colNr' in infocomp:
+                            vl=linecomps[infocomp['colNr']]
+                    else:
+                        vl=infodict[infocomp['fieldKey']][infocomp['keyIndex']]
+                    if 'Categories' in infocomp:
+                        if vl in infocomp['Categories']:
+                            vl=infocomp['Categories'][vl]
+                        else:
+                            if '*' in infocomp['Categories']:
+                                vl=infocomp['Categories']['*']
+                            else:
+                                raise Exception('Unknown coding ')
+                    rs[infocomp['ID']]=vl
 
+                if (self.FilterPassedOnly) and not(rs['Filtered']): accept=False
+                if accept:
 
-                #parse format
-                formatcomps=linecomps[self.colnr_format].split(':')
-                samplecompposits=[]
-                for samplecompnr in range(len(self.samplecomps)):
-                    thesamplecomppos=-1
-                    for fcompnr in range(len(formatcomps)):
-                        if self.samplecomps[samplecompnr]['id']==formatcomps[fcompnr]:
-                            thesamplecomppos=fcompnr
-                    #if thesamplecomppos<0: raise Exception('unable to find format component {0} in line {1}'.format(self.samplecomps[samplecompnr]['id'],line))
-                    samplecompposits.append(thesamplecomppos)
+                    #parse format identifier
+                    formatcomps=linecomps[self.colnr_format].split(':')
+                    samplecompposits=[]
+                    for samplecompnr in range(len(self.samplecomps)):
+                        thesamplecomppos=-1
+                        for fcompnr in range(len(formatcomps)):
+                            if self.samplecomps[samplecompnr]['id']==formatcomps[fcompnr]:
+                                thesamplecomppos=fcompnr
+                        #if thesamplecomppos<0: raise Exception('unable to find format component {0} in line {1}'.format(self.samplecomps[samplecompnr]['id'],line))
+                        samplecompposits.append(thesamplecomppos)
 
-                #parse sample data
-                scolnr=self.colnr_format
-                for sid in self.sampleids:
-                    scolnr+=1
-                    samplecompvals=[x.split(',') for x in linecomps[scolnr].split(':')]
-                    scompnr=0
-                    for scomp in self.samplecomps:
-                        theval=0
-                        if samplecompposits[scompnr]>=0:
-                            theval=samplecompvals[samplecompposits[scompnr]][scomp['sub']]
-                        rs[sid+'_'+scomp['name']]=theval
-                        scompnr+=1
+                    #parse per-sample data
+                    scolnr=self.colnr_format
+                    for sid in self.sampleids:
+                        scolnr+=1
+                        samplecompvals=[x.split(',') for x in linecomps[scolnr].split(':')]
+                        scompnr=0
+                        for scomp in self.samplecomps:
+                            theval=0
+                            if samplecompposits[scompnr]>=0:
+                                theval=samplecompvals[samplecompposits[scompnr]][scomp['sub']]
+                            rs[sid+'_'+scomp['name']]=theval
+                            scompnr+=1
 
-                yield rs
+                    yield rs
+
         inputfile.close()
 
 
@@ -161,14 +171,12 @@ def GetWriteFile(chrom,id):
     global lastchr
     if lastchr!=chrom:
         for fname in files:
-#            print(fname)
             if fname.startswith(lastchr):
-#                print('* Closing {0}'.format(fname))
                 files[fname].close()
         lastchr=chrom
     fid=chrom+'_'+id
     if not(fid in files):
-        files[fid]=open('C:/Data/Test/Genome/{0}/{1}.txt'.format(dataid,fid),'w')
+        files[fid]=open('{0}/{1}/{2}.txt'.format(destdir,dataid,fid),'w')
     return files[fid]
 
 
@@ -179,105 +187,105 @@ def GetWriteFile(chrom,id):
 #fileid='7g8xGb4-allSamples-0.1'
 #fileid='Hb3xDd2-allSamples-0.1'
 
-if False:
-    settings={
-        'fileid':'Hb3xDd2-allSamples-0.1',
-        'infocomps':
-            [
-                    {'name':'AQ','id':'AQ','sub':0},
-                    {'name':'MQ','id':'MQ','sub':0}
-                #            {'name':'ST','id':'ST','sub':0, 'cats':{'intergenic':0,'intron':1,'coding':2,'unknown':99}}
-            ],
-        'samplecomps':
-            [
-                    {'name':'covA', 'id':'AD','sub':0},
-                    {'name':'covD','id':'AD','sub':1}
-            ]
-    }
+
+sourcedir='C:/Data/Genomes/PfCrosses/InputData/Snps'
+destdir='C:/Data/Test/Genome'
+dataid="test01"
+
+#Load settings
+settingsFile=open('{0}/{1}.txt'.format(sourcedir,dataid))
+settingsStr=''
+for line in settingsFile:
+    if (len(line)>0) and (line[0]!='#'):
+        settingsStr+=line
+settingsFile.close()
+settings=simplejson.loads(settingsStr)
 
 
-if True:
-    settings={
-        'fileid':'svar1',
-        'passonly':True,
-        'infocomps':
-               [
-                {'name':'AQ','id':'SVLEN','sub':0},
-                {'name':'MQ','id':'SVLEN','sub':0},
-                {'name':'SVTYPE','id':'SVTYPE','sub':0, 'cats':{'SNP':0,'SNP_FROM_COMPLEX':0,'INDEL':1,'INV_INDEL':1,'INDEL_FROM_COMPLEX':1,'INS':2,'DEL':3}}
-               ],
-        'samplecomps':
-        [
-                {'name':'covA', 'id':'COV','sub':0},
-                {'name':'covD','id':'COV','sub':1}
-        ]
-    }
-
-
-
-
-dataid='SNP-'+settings['fileid'].replace('.','')
-filename='C:/Data/Genomes/PfCrosses/InputData/Snps/{0}.vcf'.format(settings['fileid'])
+filename='{0}/{1}.vcf'.format(sourcedir,dataid)
 
 f=open(filename,'r')
 st=''
-for i in range(1000):
+for i in range(3000):
     st+=f.readline()
 f.close()
-f=open('C:/Data/Genomes/PfCrosses/InputData/Snps/TOP_{0}.txt'.format(settings['fileid']),'w')
+f=open('{0}/TOP_{1}.txt'.format(sourcedir,dataid),'w')
 f.write(st)
 f.close()
 
 
 fl=DataProvider_VCF(filename,settings)
 
+#Create output directory
+outputdir=destdir+'/'+dataid
+if not os.path.exists(outputdir):
+    os.makedirs(outputdir)
+
+
+print('=============== Report Snp Position Information components ===================')
+for infocomp in settings['InfoComps']:
+    print("ID={0}".format(infocomp['ID']))
+    print("    Name={0}".format(infocomp['Name']))
+    infocomp['theEncoder']=DQXEncoder.GetEncoder(infocomp['Encoder'])
+    print("    Encoder={0}".format(str(infocomp['theEncoder'].getInfo())))
+print('=======================================================================')
+
+print('SAMPLES: '+','.join(fl.sampleids))
+
+################# Create metainfo file #########################################
+ofile=open('{0}/_MetaData.txt'.format(outputdir,dataid),'w')
+ofile.write('Samples='+'\t'.join(fl.sampleids)+'\n')
+infocompinfo=[]
+for infocomp in settings['InfoComps']:
+    infoinfo={'ID': infocomp['ID'], 'Name': infocomp['Name'], 'Display': infocomp['Display']}
+    if 'Min' in infocomp: infoinfo['Min']=infocomp['Min']
+    if 'Max' in infocomp: infoinfo['Max']=infocomp['Max']
+    infoinfo['Encoder']=infocomp['theEncoder'].getInfo()
+    infoinfo['DataType']=infocomp['theEncoder'].getDataType()
+    infocompinfo.append(infoinfo)
+ofile.write('SnpPositionFields='+simplejson.dumps(infocompinfo)+'\n')
+ofile.close()
+
+
 b64=B64.B64()
 nr=0
 for rw in fl.GetRowIterator():
-    if (rw['filter']) or not(settings['passonly']):
-        chromname=rw['chrom']
-        if chromname[:3]=='MAL':
-            chromnr=int(chromname[3:])
-            chromname=str(chromnr).zfill(2)
-            chromname='Pf3D7_'+chromname
 
-        GetWriteFile(chromname,'pos').write('{0}\n'.format(rw['pos']))
+    chromname=rw['chrom']
+    if chromname[:3]=='MAL':
+        chromnr=int(chromname[3:])
+        chromname=str(chromnr).zfill(2)
+        chromname='Pf3D7_'+chromname
 
-        of=GetWriteFile(chromname,'snpinfo')
+    GetWriteFile(chromname,'pos').write('{0}\n'.format(rw['pos']))
 
-        written=False
-        if rw['SVTYPE']==0:
-            of.write(rw['ref'])
-            of.write(rw['alt'])
-            written=True
+    if 'SVTYPE' in rw:
         if rw['SVTYPE']==1:
-            of.write('+')
-            of.write('+')
-            written=True
+            rw['RefBase']='+'
+            rw['AltBase']='+'
         if rw['SVTYPE']==2:
-            of.write('.')
-            of.write('+')
-            written=True
+            rw['RefBase']='.'
+            rw['AltBase']='+'
         if rw['SVTYPE']==3:
-            of.write('+')
-            of.write('.')
-            written=True
+            rw['RefBase']='+'
+            rw['AltBase']='.'
 
-        if not(written): raise Exception('Invalid SVTYPE')
+    of=GetWriteFile(chromname,'snpinfo')
+    for infocomp in settings['InfoComps']:
+        vl=rw[infocomp['ID']]
+        st=infocomp['theEncoder'].perform(vl)
+        if len(st)!=infocomp['theEncoder'].getlength():
+            raise Exception('Invalid encoded length')
+        of.write(st)
 
-        of.write(CodeFloat(rw['AQ'],0,100,2))
-        of.write(CodeFloat(rw['MQ'],0,100,2))
-        of.write(CodeBoolean(rw['filter']))
-
-        for sid in fl.sampleids:
-            of=GetWriteFile(chromname,sid)
-            of.write(b64.Int2B64(int(rw[sid+'_covA']),2))
-            of.write(b64.Int2B64(int(rw[sid+'_covD']),2))
-            #print(rw)
+    for sid in fl.sampleids:
+        of=GetWriteFile(chromname,sid)
+        st=b64.Int2B64(int(rw[sid+'_covA']),2)+b64.Int2B64(int(rw[sid+'_covD']),2)
+        of.write(st)
 
     nr+=1
     if nr%1000==0:
         print('Processed: '+str(nr))
-#    if nr==30000:
-#        break
+    if nr==30000:
+        break
 

@@ -59,6 +59,7 @@ def ReturnSnpInfo(meta,returndata):
     seqids=returndata['seqids'].split('~')
     chromoid=returndata['chromoid']
     folder=returndata['folder']
+    snpInfoRecLen=int(returndata['snpinforeclen'])
 
     datadir=meta['BASEDIR']+'/'+folder
     index=GetPositionIndex(datadir,chromoid)
@@ -68,10 +69,9 @@ def ReturnSnpInfo(meta,returndata):
     coder=B64.ValueListCoder()
     returndata['posits']=coder.EncodeIntegersByDifferenceB64(index.posits[idx1:idx2+1])
 
-    reclen=7
     f=open(datadir+'/'+chromoid+'_snpinfo.txt')
-    f.seek(reclen*idx1)
-    snpdata=f.read(reclen*(idx2-idx1+1))
+    f.seek(snpInfoRecLen*idx1)
+    snpdata=f.read(snpInfoRecLen*(idx2-idx1+1))
     f.close()
     returndata['snpdata']=snpdata
 

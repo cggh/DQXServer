@@ -10,6 +10,23 @@ class Encoder:
     def getInfo(self):
         raise Exception('function not implemented')
 
+class EncoderInt2B64(Encoder):
+    def __init__(self,info):
+        Encoder.__init__(self,info)
+        self.length=info['Len']
+        self.b64=B64.B64()
+    def perform(self,inp):
+        if inp==None:
+            return '~'*self.length
+        return self.b64.Int2B64(int(inp),self.length)
+    def getlength(self):
+        return self.length
+    def getInfo(self):
+        return {'ID':'Int2B64', 'Len':self.length }
+    def getDataType(self):
+        return "Value"
+
+
 class EncoderFloat2B64(Encoder):
     def __init__(self,info):
         Encoder.__init__(self,info)
@@ -18,18 +35,21 @@ class EncoderFloat2B64(Encoder):
         self.length=info['Len']
         self.compressedRange=int(64**self.length-10)
         self.mulfac=1.0/(self.max-self.min)*self.compressedRange
+        self.slope=1.0/self.mulfac
         self.b64=B64.B64()
     def perform(self,inp):
         if inp==None:
             return '~'*self.length
-        intval=int(0.5+(inp-self.min)*self.mulfac)
+        intval=int(round((float(inp)-self.min)*self.mulfac))
         if intval<0: intval=0
         if intval>self.compressedRange: intval=self.compressedRange
         return self.b64.Int2B64(intval,self.length)
     def getlength(self):
         return self.length
     def getInfo(self):
-        return {'ID':'Float2B64', 'Offset':self.min, 'Slope':((self.max-self.min)*1.0/self.compressedRange), 'Len':self.length }
+        return {'ID':'Float2B64', 'Offset':self.min, 'Slope':self.slope, 'Len':self.length }
+    def getDataType(self):
+        return "Value"
 
 
 def ClipRange(vl,min,max):
@@ -61,6 +81,8 @@ class EncoderFloatList2B64(Encoder):
         return self.count+4
     def getInfo(self):
         return {'ID':'FloatList2B64', 'Count':self.count, 'RangeOffset':self.min, 'RangeSlope':((self.max-self.min)*1.0/4000) }
+    def getDataType(self):
+        return "ValueList"
 
 
 
@@ -76,14 +98,57 @@ class EncoderFixedString(Encoder):
         return self.len
     def getInfo(self):
         return {'ID':'FixedString', 'Len':self.len }
+    def getDataType(self):
+        return "String"
+
+
+class EncoderLimitString(Encoder):
+    def __init__(self,info):
+        Encoder.__init__(self,info)
+        self.len=info['Len']
+    def perform(self,inp):
+        st=inp
+        if len(st)>self.len:
+            st=st[:self.len-1]+'>'
+        while len(st)<self.len:
+            st+=' '
+        return st
+    def getlength(self):
+        return self.len
+    def getInfo(self):
+        return {'ID':'FixedString', 'Len':self.len }
+    def getDataType(self):
+        return "String"
+
+
+class EncoderBoolean(Encoder):
+    def __init__(self,info):
+        Encoder.__init__(self,info)
+    def perform(self,inp):
+        if inp:
+            return '1'
+        else:
+            return '0'
+    def getlength(self):
+        return 1
+    def getInfo(self):
+        return {'ID':'Boolean' }
+    def getDataType(self):
+        return "Boolean"
 
 
 
 def GetEncoder(info):
+    if info['ID']=='Int2B64':
+        return EncoderInt2B64(info)
     if info['ID']=='Float2B64':
         return EncoderFloat2B64(info)
     if info['ID']=='FloatList2B64':
         return EncoderFloatList2B64(info)
     if info['ID']=='FixedString':
         return EncoderFixedString(info)
-    raise Exception('Unknown encoder {0}'.format(info['Encoder']))
+    if info['ID']=='LimitString':
+        return EncoderLimitString(info)
+    if info['ID']=='Boolean':
+        return EncoderBoolean(info)
+    raise Exception('Unknown encoder {0}'.format(info['ID']))
