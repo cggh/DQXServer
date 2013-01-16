@@ -9,11 +9,16 @@ import os
 sourcedir='C:/Data/Test/Genome/SnpDataCross'
 #dataid="3d7xHb3-qcPlusSamples-01"
 #dataid="7g8xGb4-allSamples-01"
-dataid="Hb3xDd2-allSamples-01"
+#dataid="Hb3xDd2-allSamples-01"
+#dataid="svar1"
+#dataid="test"
 
-if len(sys.argv)==1:
-    dataid=sys.argv[0]
+dataid="PG0233-C"
+
+if len(sys.argv)==2:
+    dataid=sys.argv[1]
     sourcedir='.'
+
 
 print('dataid='+str(dataid))
 
@@ -22,6 +27,7 @@ print('dataid='+str(dataid))
 
 class DataProvider_VCF:
     def __init__(self,ifilename,settings):
+        self.checkRequiredComponents(settings)
         self.infocomps=settings['InfoComps']
         self.samplecomps=settings['SampleComps']
         self.FilterPassedOnly=settings['FilterPassedOnly']
@@ -29,11 +35,13 @@ class DataProvider_VCF:
         self.inputfilename=ifilename
         inputfile=open(self.inputfilename,'r')
         headerended=False
+        self.lineNr=0
         self.headerlen=0
         self.parents=[]
         while not(headerended):
             self.headerlen+=1
             line=inputfile.readline().rstrip('\n')
+            self.lineNr+=1
             if (line[0]=='#') and (line[1]!='#'):
                 headerended=True
             else:
@@ -82,8 +90,53 @@ class DataProvider_VCF:
             else:
                 infocomp['inInfo']=False
                 if len(infocomp['Source'])>0:
-                    infocomp['colNr']=headercompdict[infocomp['Source']]
+                    try:
+                        infocomp['colNr']=headercompdict[infocomp['Source']]
+                    except KeyError:
+                        raise Exception('Missing Column "{0}"'.format(infocomp['Source']))
                 pass
+
+    def checkRequiredComponents(self,settings):
+
+        for requiredTag in ['SourceFile','SourceFileFormat','FilterPassedOnly','PositiveQualityOnly','InfoComps','SampleComps']:
+            if requiredTag not in settings:
+                raise Exception('Tag "{0}" not present in settings file'.format(requiredTag))
+
+        #Check presence of required tags for the per-position SNP component
+        for requiredTag in ['Name','ID','Source', 'Display', 'Encoder']:
+            for comp in settings['InfoComps']:
+                if requiredTag not in comp:
+                    raise Exception('Tag "{0}" not present in SampleComponent {1}'.format(requiredTag,str(comp)))
+
+        #Check presence of required per-position SNP components
+        requiredComponents = ['RefBase', 'AltBase', 'Filtered']
+        for requiredCompID in requiredComponents:
+            found=False
+            for comp in settings['InfoComps']:
+                if comp['ID']==requiredCompID:
+                    found=True
+            if not(found):
+                raise Exception('Missing require per-sample component "{0}"'.format(requiredCompID))
+
+        #Check presence of required tags for each per-sample SNP component
+        for requiredTag in ['ID','SourceID','SourceSub']:
+            for comp in settings['SampleComps']:
+                if requiredTag not in comp:
+                    raise Exception('Tag "{0}" not present in InfoComponent {1}'.format(requiredTag,str(comp)))
+
+        #Check presence of required per-sample SNP components
+        requiredComponents = ['covA', 'covD']
+        for requiredCompID in requiredComponents:
+            found=False
+            for comp in settings['SampleComps']:
+                if comp['ID']==requiredCompID:
+                    found=True
+            if not(found):
+                raise Exception('Missing required per-sample component "{0}"'.format(requiredCompID))
+        #Currently, the set of components that should be present here is exactly defined
+        if len(settings['SampleComps'])>len(requiredComponents):
+            raise Exception('Too many per-sample components')
+        pass
 
 
     def GetRowIterator(self):
@@ -95,6 +148,7 @@ class DataProvider_VCF:
             line=inputfile.readline().rstrip('\n')
             if not(line):
                 break
+            self.lineNr+=1
             linecomps=line.split('\t')
             if len(linecomps)>1:
                 rs={}
@@ -122,9 +176,15 @@ class DataProvider_VCF:
                         vl=None
                         if not(infocomp['inInfo']):
                             if 'colNr' in infocomp:
-                                vl=linecomps[infocomp['colNr']]
+                                try:
+                                    vl=linecomps[infocomp['colNr']]
+                                except (IndexError):
+                                    raise Exception('Missing component {0} for line {1}.\nDATA: {2}'.format(infocomp['colNr'],self.lineNr,str(linecomps)))
                         else:
-                            vl=infodict[infocomp['fieldKey']][infocomp['keyIndex']]
+                            try:
+                                vl=infodict[infocomp['fieldKey']][infocomp['keyIndex']]
+                            except (KeyError,IndexError):
+                                raise Exception('Missing info component {0}:{1} for line {2}.\nDATA: {3}'.format(infocomp['fieldKey'],infocomp['keyIndex'],self.lineNr,str(infodict)))
                         if 'Categories' in infocomp:
                             if vl in infocomp['Categories']:
                                 vl=infocomp['Categories'][vl]
@@ -144,9 +204,10 @@ class DataProvider_VCF:
                         for samplecompnr in range(len(self.samplecomps)):
                             thesamplecomppos=-1
                             for fcompnr in range(len(formatcomps)):
-                                if self.samplecomps[samplecompnr]['id']==formatcomps[fcompnr]:
+                                if self.samplecomps[samplecompnr]['SourceID']==formatcomps[fcompnr]:
                                     thesamplecomppos=fcompnr
-                            #if thesamplecomppos<0: raise Exception('unable to find format component {0} in line {1}'.format(self.samplecomps[samplecompnr]['id'],line))
+                            if thesamplecomppos<0:
+                                raise Exception('Unable to find format component "{0}" in line {1}\nFORMAT: {2}'.format(self.samplecomps[samplecompnr]['SourceID'],self.lineNr,linecomps[self.colnr_format]))
                             samplecompposits.append(thesamplecomppos)
 
                         #parse per-sample data
@@ -158,8 +219,11 @@ class DataProvider_VCF:
                             for scomp in self.samplecomps:
                                 theval=0
                                 if samplecompposits[scompnr]>=0:
-                                    theval=samplecompvals[samplecompposits[scompnr]][scomp['sub']]
-                                rs[sid+'_'+scomp['name']]=theval
+                                    try:
+                                        theval=samplecompvals[samplecompposits[scompnr]][scomp['SourceSub']]
+                                    except (KeyError,IndexError):
+                                        raise Exception('Unable to get per-sample information component "{0}" in line {1}\nFORMAT: {2}\nDATA: {3}'.format(scomp['ID'],self.lineNr,linecomps[self.colnr_format],linecomps[scolnr]))
+                                rs[sid+'_'+scomp['ID']]=theval
                                 scompnr+=1
 
                         yield rs
@@ -171,22 +235,6 @@ class DataProvider_VCF:
 
 
 
-
-
-
-def CodeFloat(vl,minvl,maxvl,bytecount):
-    CompressedRange=int(64**bytecount-10)
-    ivl=int(0.5+(float(vl)-minvl)/(maxvl-minvl)*CompressedRange)
-    if ivl<0: ivl=0
-    if ivl>CompressedRange: ivl=CompressedRange
-    return b64.Int2B64(ivl,bytecount)
-
-
-def CodeBoolean(vl):
-    if vl:
-        return '1'
-    else:
-        return '0'
 
 
 lastchr='---'
@@ -206,6 +254,14 @@ def GetWriteFile(chrom,id):
 
 
 
+#Create output directory
+outputdir=sourcedir+'/'+dataid
+if not os.path.exists(outputdir):
+    os.makedirs(outputdir)
+#remove all output files that correspond to this configuration
+for flename in os.listdir(outputdir):
+    os.remove(os.path.join(outputdir,flename))
+
 
 #Load settings
 settingsFile=open('{0}/{1}.txt'.format(sourcedir,dataid))
@@ -215,32 +271,24 @@ for line in settingsFile:
         settingsStr+=line
 settingsFile.close()
 settings=simplejson.loads(settingsStr)
+sourceFileName='{0}/{1}.vcf'.format(sourcedir,settings['SourceFile'])
 
-
-filename='{0}/{1}.vcf'.format(sourcedir,dataid)
-
-f=open(filename,'r')
+#For reference: write top lines of the VCF file to the output directory
+f=open(sourceFileName,'r')
 st=''
 for i in range(3000):
     st+=f.readline()
 f.close()
-f=open('{0}/TOP_{1}.txt'.format(sourcedir,dataid),'w')
+f=open('{0}/_TOP_VCF_{1}.txt'.format(outputdir,dataid),'w')
 f.write(st)
 f.close()
 
 
-fl=DataProvider_VCF(filename,settings)
-
-#Create output directory
-outputdir=sourcedir+'/'+dataid
-if not os.path.exists(outputdir):
-    os.makedirs(outputdir)
-#remove all output files that correspond to this configuration
-for filename in os.listdir(outputdir):
-   os.remove(os.path.join(outputdir,filename))
+sourceFile=DataProvider_VCF(sourceFileName,settings)
 
 
-print('=============== Report Snp Position Information components ===================')
+
+print('=============== Report Snp Position Information components ============')
 for infocomp in settings['InfoComps']:
     print("ID={0}".format(infocomp['ID']))
     print("    Name={0}".format(infocomp['Name']))
@@ -248,11 +296,11 @@ for infocomp in settings['InfoComps']:
     print("    Encoder={0}".format(str(infocomp['theEncoder'].getInfo())))
 print('=======================================================================')
 
-print('SAMPLES: '+','.join(fl.sampleids))
+print('SAMPLES: '+','.join(sourceFile.sampleids))
 
 ################# Create metainfo file #########################################
 ofile=open('{0}/_MetaData.txt'.format(outputdir,dataid),'w')
-ofile.write('Samples='+'\t'.join(fl.sampleids)+'\n')
+ofile.write('Samples='+'\t'.join(sourceFile.sampleids)+'\n')
 infocompinfo=[]
 for infocomp in settings['InfoComps']:
     infoinfo={'ID': infocomp['ID'], 'Name': infocomp['Name'], 'Display': infocomp['Display']}
@@ -262,8 +310,8 @@ for infocomp in settings['InfoComps']:
     infoinfo['DataType']=infocomp['theEncoder'].getDataType()
     infocompinfo.append(infoinfo)
 ofile.write('SnpPositionFields='+simplejson.dumps(infocompinfo)+'\n')
-if len(fl.parents)>0:
-    ofile.write('Parents='+'\t'.join(fl.parents)+'\n')
+if len(sourceFile.parents)>0:
+    ofile.write('Parents='+'\t'.join(sourceFile.parents)+'\n')
 ofile.close()
 
 limitcount=None
@@ -275,7 +323,7 @@ if ('LimitCount' in settings):
 
 b64=B64.B64()
 nr=0
-for rw in fl.GetRowIterator():
+for rw in sourceFile.GetRowIterator():
 
     chromname=rw['chrom']
 
@@ -298,6 +346,9 @@ for rw in fl.GetRowIterator():
             rw['RefBase']='+'
             rw['AltBase']='.'
 
+    if len(rw['RefBase'])>1: rw['RefBase']='+';
+    if len(rw['AltBase'])>1: rw['AltBase']='+';
+
     of=GetWriteFile(chromname,'snpinfo')
     for infocomp in settings['InfoComps']:
         vl=rw[infocomp['ID']]
@@ -306,7 +357,7 @@ for rw in fl.GetRowIterator():
             raise Exception('Invalid encoded length')
         of.write(st)
 
-    for sid in fl.sampleids:
+    for sid in sourceFile.sampleids:
         of=GetWriteFile(chromname,sid)
         st=b64.Int2B64(int(rw[sid+'_covA']),2)+b64.Int2B64(int(rw[sid+'_covD']),2)
         of.write(st)
@@ -315,6 +366,7 @@ for rw in fl.GetRowIterator():
     if nr%1000==0:
         print('Processed: '+str(nr))
     if (limitcount is not None) and (nr>=limitcount):
-       break
+        print('>>> Truncated data processing at {0}'.format(limitcount))
+        break
 
 print('============= Completed! =========================')
