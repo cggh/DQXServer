@@ -6,23 +6,45 @@ import simplejson
 import DQXEncoder
 import os
 
-sourcedir='C:/Data/Test/Genome/SnpDataCross'
-#dataid="3d7xHb3-qcPlusSamples-01"
-#dataid="7g8xGb4-allSamples-01"
-#dataid="Hb3xDd2-allSamples-01"
-#dataid="svar1"
-#dataid="test"
+sourcedir='.'
 
-dataid="PG0233-C"
+#"3d7xHb3-qcPlusSamples-01"
+#"7g8xGb4-allSamples-01"
+#"Hb3xDd2-allSamples-01"
+#"svar1"
+#"test"
 
-if len(sys.argv)==2:
-    dataid=sys.argv[1]
-    sourcedir='.'
+#============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
+#sys.argv=['','3d7xHb3-qcPlusSamples-01','DefaultCrosses','XXX']
+#sourcedir='C:/Data/Test/Genome/SnpDataCross'
+#============= END OF FAKE STUFF ============================================
+
+if len(sys.argv)<2:
+    print('Usage: COMMAND VCFFilename [ConfigFilename] [OutputDir]')
+    print('   VCFFilename= name of the source VCF file (do not provide the extension ".vcf")')
+    print('   ConfigFilename= name of the source configuration file (do not provide the extension ".cnf").')
+    print('      If not provided, the same name as the VCF file will be used')
+    print('   OutputDir= destination folder of the processed data.')
+    print('      If not provided, the same name as the VCF file will be used')
+    sys.exit()
+
+dataSource=sys.argv[1]
+configSource=dataSource
+dataDest=dataSource
+
+if len(sys.argv)>=3:
+    configSource=sys.argv[2]
+
+if len(sys.argv)>=4:
+    dataDest=sys.argv[3]
 
 
-print('dataid='+str(dataid))
+print('dataSource='+dataSource)
+print('configSource='+configSource)
+print('dataDest='+dataDest)
 
 
+#sys.exit()
 
 
 class DataProvider_VCF:
@@ -98,7 +120,7 @@ class DataProvider_VCF:
 
     def checkRequiredComponents(self,settings):
 
-        for requiredTag in ['SourceFile','SourceFileFormat','FilterPassedOnly','PositiveQualityOnly','InfoComps','SampleComps']:
+        for requiredTag in ['SourceFileFormat','FilterPassedOnly','PositiveQualityOnly','InfoComps','SampleComps']:
             if requiredTag not in settings:
                 raise Exception('Tag "{0}" not present in settings file'.format(requiredTag))
 
@@ -239,7 +261,6 @@ class DataProvider_VCF:
 
 lastchr='---'
 files={}
-
 def GetWriteFile(chrom,id):
     global lastchr
     if lastchr!=chrom:
@@ -249,13 +270,13 @@ def GetWriteFile(chrom,id):
         lastchr=chrom
     fid=chrom+'_'+id
     if not(fid in files):
-        files[fid]=open('{0}/{1}/{2}.txt'.format(sourcedir,dataid,fid),'w')
+        files[fid]=open('{0}/{1}/{2}.txt'.format(sourcedir,dataDest,fid),'w')
     return files[fid]
 
 
 
 #Create output directory
-outputdir=sourcedir+'/'+dataid
+outputdir=sourcedir+'/'+dataDest
 if not os.path.exists(outputdir):
     os.makedirs(outputdir)
 #remove all output files that correspond to this configuration
@@ -264,14 +285,14 @@ for flename in os.listdir(outputdir):
 
 
 #Load settings
-settingsFile=open('{0}/{1}.txt'.format(sourcedir,dataid))
+settingsFile=open('{0}/{1}.cnf'.format(sourcedir,configSource))
 settingsStr=''
 for line in settingsFile:
     if (len(line)>0) and (line[0]!='#'):
         settingsStr+=line
 settingsFile.close()
 settings=simplejson.loads(settingsStr)
-sourceFileName='{0}/{1}.vcf'.format(sourcedir,settings['SourceFile'])
+sourceFileName='{0}/{1}.vcf'.format(sourcedir,dataSource)
 
 #For reference: write top lines of the VCF file to the output directory
 f=open(sourceFileName,'r')
@@ -279,7 +300,7 @@ st=''
 for i in range(3000):
     st+=f.readline()
 f.close()
-f=open('{0}/_TOP_VCF_{1}.txt'.format(outputdir,dataid),'w')
+f=open('{0}/_TOP_VCF_{1}.txt'.format(outputdir,dataSource),'w')
 f.write(st)
 f.close()
 
@@ -299,7 +320,7 @@ print('=======================================================================')
 print('SAMPLES: '+','.join(sourceFile.sampleids))
 
 ################# Create metainfo file #########################################
-ofile=open('{0}/_MetaData.txt'.format(outputdir,dataid),'w')
+ofile=open('{0}/_MetaData.txt'.format(outputdir),'w')
 ofile.write('Samples='+'\t'.join(sourceFile.sampleids)+'\n')
 infocompinfo=[]
 for infocomp in settings['InfoComps']:
@@ -363,7 +384,7 @@ for rw in sourceFile.GetRowIterator():
         of.write(st)
 
     nr+=1
-    if nr%1000==0:
+    if nr%500==0:
         print('Processed: '+str(nr))
     if (limitcount is not None) and (nr>=limitcount):
         print('>>> Truncated data processing at {0}'.format(limitcount))
