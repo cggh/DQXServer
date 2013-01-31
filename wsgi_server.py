@@ -1,69 +1,32 @@
-from wsgiref.simple_server import make_server
-from cgi import parse_qs, escape
-
-import sys
-import os
-
-
-#!!! The following is necessary to make sure we can import from files in the local directory !!!
-try:
-    import responders
-except ImportError:
-    sys.path.append(os.path.dirname(__file__))
-    import responders
-    sys.path.remove(os.path.dirname(__file__))
-
-
+from urlparse import parse_qs
+import DQXUtils
 import simplejson
-
-
-def DownloadTable(meta,returndata,start_response):
-    pass
-
-def Environ2RequestQuery(environ):
-    d=parse_qs(environ['QUERY_STRING'])
-    map={}
-    for key in d:
-        map[key]=d[key][0]
-    return map
-
+import responders
 
 
 def application(environ, start_response):
+    returndata = dict((k,v[0]) for k,v in parse_qs(environ['QUERY_STRING']).items())
+    request_type = returndata['datatype']
 
-    meta={}
-    meta['DBSRV']='localhost'
-    meta['DBUSER']='root'
-    meta['DBPASS']='1234'
-    meta['DB']='test'
-    meta['BASEDIR']='/srv/data/Test/Genome'
-#    meta=environ
+    tm = DQXUtils.Timer()
+    try:
+        resp_func = getattr(responders, request_type)
+    except AttributeError:
+        raise Exception("Unknown request {0}".format(request_type))
+    response = resp_func(returndata)
 
-    output=""
-#    try:
-    returndata=Environ2RequestQuery(environ)
-    mydatatype=returndata['datatype']
-
-    if mydatatype=="downloadtable":
+    if request_type == "downloadtable":
         status = '200 OK'
         response_headers = [('Content-type', 'text/plain'),('Content-Disposition','attachment; filename=download.txt')]
         start_response(status, response_headers)
-        for item in responders.DownloadTable_Generator(meta,returndata):
+        for item in response:
             yield item
-        return
-
-    resplist=responders.GetRespList()
-    if not(mydatatype in resplist):
-        raise Exception("Unknown request {0}".format(mydatatype))
+        response['Content-Disposition'] = 'attachment; filename=download.txt'
     else:
-        returndata=resplist[mydatatype](meta,returndata)
-
-#    except Exception, err:
-#        returndata['Error']=str(err)
-
-    output=simplejson.dumps(returndata)
-    status = '200 OK'
-    response_headers = [('Content-type', 'text/plain'),
-                    ('Content-Length', str(len(output)))]
-    start_response(status, response_headers)
-    yield output
+        response = simplejson.dumps(response)
+        status = '200 OK'
+        response_headers = [('Content-type', 'application/json'),
+                            ('Content-Length', str(len(response)))]
+        start_response(status, response_headers)
+        yield response
+    print('@@@@ Responded to {0} in {1}s'.format(request_type, tm.Elapsed()))

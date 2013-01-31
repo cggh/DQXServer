@@ -1,4 +1,5 @@
 import B64
+import config
 
 class PositionIndex:
     def __init__(self,datadir,ichromoid):
@@ -51,8 +52,7 @@ def GetPositionIndex(datadir,chromoid):
         indexes[id]=PositionIndex(datadir,chromoid)
     return indexes[id]
 
-def ReturnSnpInfo(meta,returndata):
-
+def response(returndata):
 #    mytablename=DQXDbTools.ToSafeIdentifier(returndata['tbname'])
     startps=float(returndata['start'])
     endps=float(returndata['stop'])
@@ -61,7 +61,7 @@ def ReturnSnpInfo(meta,returndata):
     folder=returndata['folder']
     snpInfoRecLen=int(returndata['snpinforeclen'])
 
-    datadir=meta['BASEDIR']+'/'+folder
+    datadir=config.BASEDIR+'/'+folder
     index=GetPositionIndex(datadir,chromoid)
     idx1=index.Pos2IndexLeft(startps)
     idx2=index.Pos2IndexRight(endps)

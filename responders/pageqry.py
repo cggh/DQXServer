@@ -3,7 +3,7 @@ import DQXDbTools
 
 
 
-def ReturnPagedQuery(meta,returndata):
+def response(returndata):
     mytablename=returndata['tbname']
     encodedquery=returndata['qry']
     myorderfield=returndata['order']
@@ -11,7 +11,7 @@ def ReturnPagedQuery(meta,returndata):
 
     mycolumns=DQXDbTools.ParseColumnEncoding(returndata['collist'])
 
-    db = DQXDbTools.OpenDatabase(meta)
+    db = DQXDbTools.OpenDatabase()
     cur = db.cursor()
 
     whc=DQXDbTools.WhereClause()

@@ -1,0 +1,5 @@
+DBSRV = 'localhost'
+DBUSER = 'root'
+DBPASS = '1234'
+DB = 'world'
+BASEDIR = 'C:/Data/Test/Genome'

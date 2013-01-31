@@ -1,7 +1,8 @@
 import base64
+import config
 
-def ReturnFile(meta,returndata):
-    f=open(meta['BASEDIR']+'/'+returndata['name']+'.txt')
+def response(returndata):
+    f=open(config.BASEDIR+'/'+returndata['name']+'.txt')
     content=f.read()
     f.close()
     returndata['content']=base64.b64encode(content)

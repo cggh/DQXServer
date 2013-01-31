@@ -3,8 +3,8 @@ import DQXDbTools
 
 
 #Find hits for gene patterns (or similar searches)
-def ReturnFindGene(meta,returndata):
-    db = DQXDbTools.OpenDatabase(meta)
+def response(returndata):
+    db = DQXDbTools.OpenDatabase()
     cur = db.cursor()
     mypattern=DQXDbTools.ToSafeIdentifier(returndata['pattern'])
 
