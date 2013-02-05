@@ -5,7 +5,7 @@ import MySQLdb
 import config
 
 def OpenDatabase():
-    return MySQLdb.connect(host=config.DBSRV, user=config.DBUSER, passwd=config.DBPASS, db=config.DB)
+    return MySQLdb.connect(host=config.DBSRV, user=config.DBUSER, passwd=config.DBPASS, db=config.DB, charset='utf8')
 
 
 def ToSafeIdentifier(st):
