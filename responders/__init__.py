@@ -1,5 +1,5 @@
 import sys
-import pageqry
+import importlib
 
 
 class Wrapper(object):
@@ -8,11 +8,11 @@ class Wrapper(object):
 
     def __getattr__(self, name):
         try:
-            module = __import__(name, globals(), locals(), [], 1)
+            module = importlib.import_module('respondersraw.' + name)
         except ImportError:
             raise AttributeError
         return module.response
 
-
+sys.modules[__name__+'raw'] = sys.modules[__name__]
 sys.modules[__name__] = Wrapper(sys.modules[__name__])
 
