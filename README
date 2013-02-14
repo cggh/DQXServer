@@ -1,0 +1,7 @@
+To install:
+    pip install -r requirements.txt
+
+To run:
+    python development_server.py
+
+    Or install your favorite wsgi server and point it to wsgi_server.py

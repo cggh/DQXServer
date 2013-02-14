@@ -2,10 +2,10 @@
 import simplejson
 import base64
 import MySQLdb
+import config
 
-
-def OpenDatabase(meta):
-    return MySQLdb.connect(host=meta['DBSRV'], user=meta['DBUSER'], passwd=meta['DBPASS'], db=meta['DB'])
+def OpenDatabase():
+    return MySQLdb.connect(host=config.DBSRV, user=config.DBUSER, passwd=config.DBPASS, db=config.DB, charset='utf8')
 
 
 def ToSafeIdentifier(st):

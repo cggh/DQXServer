@@ -1,9 +1,9 @@
 import DQXDbTools
 
 
-def ReturnFullAnnotInfo(meta,returndata):
+def response(returndata):
 
-    db = DQXDbTools.OpenDatabase(meta)
+    db = DQXDbTools.OpenDatabase()
     cur = db.cursor()
 
     sqlquery="SELECT * FROM {tablename} WHERE fid='{id}'".format(

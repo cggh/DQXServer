@@ -1,10 +1,11 @@
 import B64
 import DQXDbTools
+import config
 
 #Return annotation information for a chromosome region
-def ReturnAnnot(meta,returndata):
+def response(returndata):
 
-    db = DQXDbTools.OpenDatabase(meta)
+    db = DQXDbTools.OpenDatabase()
     cur = db.cursor()
 
     tablename=DQXDbTools.ToSafeIdentifier(returndata['table'])

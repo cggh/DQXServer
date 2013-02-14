@@ -1,10 +1,10 @@
 import DQXDbTools
 
-def ReturnRecordInfo(meta,returndata):
+def response(returndata):
     mytablename=returndata['tbname']
     encodedquery=returndata['qry']
 
-    db = DQXDbTools.OpenDatabase(meta)
+    db = DQXDbTools.OpenDatabase()
     cur = db.cursor()
 
     whc=DQXDbTools.WhereClause()

@@ -3,7 +3,7 @@ import DQXDbTools
 
 
 
-def ReturnQuery(meta,returndata):
+def response(returndata):
 
     myposfield=DQXDbTools.ToSafeIdentifier(returndata['posfield'])
     mytablename=DQXDbTools.ToSafeIdentifier(returndata['tbname'])
@@ -13,7 +13,7 @@ def ReturnQuery(meta,returndata):
 
     mycolumns=DQXDbTools.ParseColumnEncoding(returndata['collist'])#!!!todo: verify that these column names are actual table columns
 
-    db = DQXDbTools.OpenDatabase(meta)
+    db = DQXDbTools.OpenDatabase()
     cur = db.cursor()
 
     whc=DQXDbTools.WhereClause()
