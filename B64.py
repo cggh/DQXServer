@@ -24,6 +24,13 @@ class B64:
             rs=rs*64+self.invencode[ord(ch)]
         return rs
 
+    def BooleanList2B64(self, booleanList):
+        byteCount=(len(booleanList)+5)//6
+        vl=0
+        for flag in booleanList:
+            vl = vl << 1
+            if flag: vl += 1
+        return self.Int2B64(vl,byteCount)
 
 
 class ValueListCoder:

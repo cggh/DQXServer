@@ -5,6 +5,8 @@ import sys
 import simplejson
 import DQXEncoder
 import os
+import re
+import shlex
 
 sourcedir='.'
 
@@ -15,8 +17,8 @@ sourcedir='.'
 #"test"
 
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
-#sys.argv=['','3d7xHb3-qcPlusSamples-01','DefaultCrosses','XXX']
-#sourcedir='C:/Data/Test/Genome/SnpDataCross'
+sys.argv=['','3d7_hb3.gatk.both.release','GATKCrosses','GATK2_3d7_hb3']
+sourcedir='C:/Data/Test/Genome/SnpDataCross'
 #============= END OF FAKE STUFF ============================================
 
 if len(sys.argv)<2:
@@ -60,6 +62,8 @@ class DataProvider_VCF:
         self.lineNr=0
         self.headerlen=0
         self.parents=[]
+        self.filterList=[]#List if filters
+        self.filterMap={}#Map filters to indices
         while not(headerended):
             self.headerlen+=1
             line=inputfile.readline().rstrip('\n')
@@ -73,6 +77,13 @@ class DataProvider_VCF:
                     content=tokens[1]
                     if key=='PARENT':
                         self.parents.append(content)
+                    if key=='FILTER':
+                        items=self.parseHeaderComp(content)
+                        self.filterMap[items['ID']]=len(self.filterList)
+                        self.filterList.append(items['ID'])
+
+        print('{0} FILTERS: '.format(len(self.filterList))+','.join(self.filterList))
+
 
         #parse header line
         line=line[1:]
@@ -80,6 +91,7 @@ class DataProvider_VCF:
         self.colnr_chrom=-1
         self.colnr_pos=-1
         self.colnr_qual=-1
+        self.colnr_filter=-1
         self.colnr_format=-1
         self.colnr_info=-1
         headercompdict={}
@@ -88,12 +100,14 @@ class DataProvider_VCF:
             if headercomps[compnr]=='CHROM': self.colnr_chrom=compnr
             if headercomps[compnr]=='POS': self.colnr_pos=compnr
             if headercomps[compnr]=='QUAL': self.colnr_qual=compnr
+            if headercomps[compnr]=='FILTER': self.colnr_filter=compnr
             if headercomps[compnr]=='FORMAT': self.colnr_format=compnr
             if headercomps[compnr]=='INFO': self.colnr_info=compnr
 
         if self.colnr_chrom<0: raise Exception('Field CHROM not found')
         if self.colnr_pos<0: raise Exception('Field CHROM not found')
         if self.colnr_qual<0: raise Exception('Field QUAL not found')
+        if self.colnr_filter<0: raise Exception('Field FILTER not found')
         if self.colnr_format<0: raise Exception('Field FORMAT not found')
 
         self.sampleids=headercomps[self.colnr_format+1:]
@@ -117,6 +131,21 @@ class DataProvider_VCF:
                     except KeyError:
                         raise Exception('Missing Column "{0}"'.format(infocomp['Source']))
                 pass
+
+    def parseHeaderComp(self,content):
+        if (content[0]!='<') and (content[len(content)-1]!='>'):
+            raise Exception('Invalid header line: '+content)
+        content=content[1:-1]
+        my_splitter = shlex.shlex(content, posix=True)
+        my_splitter.whitespace += ','
+        my_splitter.whitespace_split = True
+        result={}
+        for token in my_splitter:
+            subtokens=token.split('=',1)
+            key=subtokens[0]
+            value=subtokens[1]
+            result[key]=value
+        return result
 
     def checkRequiredComponents(self,settings):
 
@@ -184,6 +213,15 @@ class DataProvider_VCF:
                 if (self.PositiveQualityOnly) and (not(rs['qual']>0)): accept=False
                 if accept:
 
+                    #parse filter data
+                    filterFlags=[False]*len(self.filterList)
+                    if linecomps[self.colnr_filter]!='PASS':
+                        for filterItem in linecomps[self.colnr_filter].split(';'):
+                            if filterItem not in self.filterMap:
+                                raise Exception('Invalid filter item: '+filterItem)
+                            filterFlags[self.filterMap[filterItem]]=True
+                    rs['filter']=filterFlags
+
                     #parse info field data
                     infodict={}
                     for comp in linecomps[self.colnr_info].split(';'):
@@ -240,7 +278,7 @@ class DataProvider_VCF:
                             scompnr=0
                             for scomp in self.samplecomps:
                                 theval=0
-                                if samplecompposits[scompnr]>=0:
+                                if (samplecompposits[scompnr]>=0) and (linecomps[scolnr]!='./.'):
                                     try:
                                         theval=samplecompvals[samplecompposits[scompnr]][scomp['SourceSub']]
                                     except (KeyError,IndexError):
@@ -297,7 +335,7 @@ sourceFileName='{0}/{1}.vcf'.format(sourcedir,dataSource)
 #For reference: write top lines of the VCF file to the output directory
 f=open(sourceFileName,'r')
 st=''
-for i in range(3000):
+for i in range(1000):
     st+=f.readline()
 f.close()
 f=open('{0}/_TOP_VCF_{1}.txt'.format(outputdir,dataSource),'w')
@@ -323,6 +361,9 @@ print('SAMPLES: '+','.join(sourceFile.sampleids))
 ofile=open('{0}/_MetaData.txt'.format(outputdir),'w')
 ofile.write('Samples='+'\t'.join(sourceFile.sampleids)+'\n')
 infocompinfo=[]
+#Filter flag booleanlist
+infocompinfo.append({'ID':'FilterFlags', 'Name':'FilterFlags', 'Display':False, 'DataType':'BooleanList', "Encoder": {"ID": "BooleanListB64", "Count": len(sourceFile.filterList)}})
+#Other properties
 for infocomp in settings['InfoComps']:
     infoinfo={'ID': infocomp['ID'], 'Name': infocomp['Name'], 'Display': infocomp['Display']}
     if 'Min' in infocomp: infoinfo['Min']=infocomp['Min']
@@ -331,6 +372,7 @@ for infocomp in settings['InfoComps']:
     infoinfo['DataType']=infocomp['theEncoder'].getDataType()
     infocompinfo.append(infoinfo)
 ofile.write('SnpPositionFields='+simplejson.dumps(infocompinfo)+'\n')
+ofile.write('Filters='+'\t'.join(sourceFile.filterList)+'\n')
 if len(sourceFile.parents)>0:
     ofile.write('Parents='+'\t'.join(sourceFile.parents)+'\n')
 ofile.close()
@@ -354,6 +396,10 @@ for rw in sourceFile.GetRowIterator():
             chromname=str(chromnr).zfill(2)
             chromname='Pf3D7_'+chromname
 
+    if ('ConvertChromoNamesV32Pf3D7' in settings) and (settings['ConvertChromoNamesV32Pf3D7']):
+        chromname=chromname.replace('_v3','')
+
+
     GetWriteFile(chromname,'pos').write('{0}\n'.format(rw['pos']))
 
     if 'SVTYPE' in rw:
@@ -370,7 +416,13 @@ for rw in sourceFile.GetRowIterator():
     if len(rw['RefBase'])>1: rw['RefBase']='+';
     if len(rw['AltBase'])>1: rw['AltBase']='+';
 
+    #Write SNP info data
     of=GetWriteFile(chromname,'snpinfo')
+
+    #Write Filter flags
+    of.write(b64.BooleanList2B64(rw['filter']))
+
+#Write SNP info components
     for infocomp in settings['InfoComps']:
         vl=rw[infocomp['ID']]
         st=infocomp['theEncoder'].perform(vl)
