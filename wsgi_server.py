@@ -21,7 +21,6 @@ def application(environ, start_response):
         start_response(status, response_headers)
         for item in response:
             yield item
-        response['Content-Disposition'] = 'attachment; filename=download.txt'
     else:
         response = simplejson.dumps(response)
         status = '200 OK'
