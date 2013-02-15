@@ -59,6 +59,7 @@ def response(returndata):
     seqids=returndata['seqids'].split('~')
     chromoid=returndata['chromoid']
     folder=returndata['folder']
+    activeFilters=list(returndata['filters'])
     snpInfoRecLen=int(returndata['snpinforeclen'])
 
     datadir=config.BASEDIR+'/'+folder
