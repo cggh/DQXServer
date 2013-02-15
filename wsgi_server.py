@@ -10,22 +10,25 @@ def application(environ, start_response):
 
     tm = DQXUtils.Timer()
     try:
-        resp_func = getattr(responders, request_type)
+        resp_func = getattr(responders, request_type)#Fetch the handfler by request type, using some introspection magic in responders/__init__.py
     except AttributeError:
         raise Exception("Unknown request {0}".format(request_type))
     response = resp_func(returndata)
 
-    if request_type == "downloadtable":
+    #todo: make the response handling part of the handler, to avoid this branching
+    #This will become necessary when we have more handlers with different response types (e.g. other downloads)
+    if request_type == "downloadtable":#Respond to a download request with a text attachment
         status = '200 OK'
         response_headers = [('Content-type', 'text/plain'),('Content-Disposition','attachment; filename=download.txt')]
         start_response(status, response_headers)
         for item in response:
             yield item
-    else:
+    else:#respond to any other event with json
         response = simplejson.dumps(response)
         status = '200 OK'
         response_headers = [('Content-type', 'application/json'),
                             ('Content-Length', str(len(response)))]
         start_response(status, response_headers)
         yield response
+
     print('@@@@ Responded to {0} in {1}s'.format(request_type, tm.Elapsed()))
