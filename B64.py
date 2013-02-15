@@ -32,6 +32,16 @@ class B64:
             if flag: vl += 1
         return self.Int2B64(vl,byteCount)
 
+    def B642BooleanList(self, st, offset, valueCount):
+        byteCount=(valueCount+5)//6
+        maskString=st[offset:offset+byteCount]
+        vl = self.B642Int(maskString)
+        rs=[]
+        for i in range(valueCount):
+            rs.append(vl & 1)
+            vl = vl >> 1
+        return [x for x in reversed(rs)]
+
 
 class ValueListCoder:
     def __init__(self):
