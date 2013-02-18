@@ -17,7 +17,9 @@ sourcedir='.'
 #"test"
 
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
-sys.argv=['','3d7_hb3.gatk.both.release','GATKCrosses','GATK2_3d7_hb3']
+#srcFile='3d7_hb3.gatk.both.release'
+srcFile='7g8_gb4.gatk.both.release'
+sys.argv=['',srcFile,'GATKCrosses','GATK2_3d7_hb3']
 sourcedir='C:/Data/Test/Genome/SnpDataCross'
 #============= END OF FAKE STUFF ============================================
 
@@ -280,7 +282,9 @@ class DataProvider_VCF:
                                 theval=0
                                 if (samplecompposits[scompnr]>=0) and (linecomps[scolnr]!='./.'):
                                     try:
-                                        theval=samplecompvals[samplecompposits[scompnr]][scomp['SourceSub']]
+                                        cellval=samplecompvals[samplecompposits[scompnr]]
+                                        if cellval[0]!='.':
+                                            theval=cellval[scomp['SourceSub']]
                                     except (KeyError,IndexError):
                                         raise Exception('Unable to get per-sample information component "{0}" in line {1}\nFORMAT: {2}\nDATA: {3}'.format(scomp['ID'],self.lineNr,linecomps[self.colnr_format],linecomps[scolnr]))
                                 rs[sid+'_'+scomp['ID']]=theval
