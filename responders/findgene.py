@@ -4,7 +4,10 @@ import DQXDbTools
 
 #Find hits for gene patterns (or similar searches)
 def response(returndata):
-    db = DQXDbTools.OpenDatabase()
+    databaseName=None
+    if 'database' in returndata:
+        databaseName = returndata['database']
+    db = DQXDbTools.OpenDatabase(databaseName)
     cur = db.cursor()
     mypattern=DQXDbTools.ToSafeIdentifier(returndata['pattern'])
 

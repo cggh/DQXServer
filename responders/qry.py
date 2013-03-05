@@ -13,7 +13,10 @@ def response(returndata):
 
     mycolumns=DQXDbTools.ParseColumnEncoding(returndata['collist'])#!!!todo: verify that these column names are actual table columns
 
-    db = DQXDbTools.OpenDatabase()
+    databaseName=None
+    if 'database' in returndata:
+        databaseName = returndata['database']
+    db = DQXDbTools.OpenDatabase(databaseName)
     cur = db.cursor()
 
     whc=DQXDbTools.WhereClause()

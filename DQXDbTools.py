@@ -4,8 +4,11 @@ import base64
 import MySQLdb
 import config
 
-def OpenDatabase():
-    return MySQLdb.connect(host=config.DBSRV, user=config.DBUSER, passwd=config.DBPASS, db=config.DB, charset='utf8')
+def OpenDatabase(database=None):
+    #todo: maintain a list of allowed databases and check against this?
+    if database is None:
+        database =  config.DB
+    return MySQLdb.connect(host=config.DBSRV, user=config.DBUSER, passwd=config.DBPASS, db=database, charset='utf8')
 
 
 def ToSafeIdentifier(st):

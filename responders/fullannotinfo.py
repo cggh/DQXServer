@@ -3,7 +3,10 @@ import DQXDbTools
 
 def response(returndata):
 
-    db = DQXDbTools.OpenDatabase()
+    databaseName=None
+    if 'database' in returndata:
+        databaseName = returndata['database']
+    db = DQXDbTools.OpenDatabase(databaseName)
     cur = db.cursor()
 
     sqlquery="SELECT * FROM {tablename} WHERE fid='{id}'".format(

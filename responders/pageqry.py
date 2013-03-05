@@ -11,7 +11,10 @@ def response(returndata):
 
     mycolumns=DQXDbTools.ParseColumnEncoding(returndata['collist'])
 
-    db = DQXDbTools.OpenDatabase()
+    databaseName=None
+    if 'database' in returndata:
+        databaseName = returndata['database']
+    db = DQXDbTools.OpenDatabase(databaseName)
     cur = db.cursor()
 
     whc=DQXDbTools.WhereClause()

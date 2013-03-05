@@ -5,7 +5,10 @@ import config
 #Return annotation information for a chromosome region
 def response(returndata):
 
-    db = DQXDbTools.OpenDatabase()
+    databaseName=None
+    if 'database' in returndata:
+        databaseName = returndata['database']
+    db = DQXDbTools.OpenDatabase(databaseName)
     cur = db.cursor()
 
     tablename=DQXDbTools.ToSafeIdentifier(returndata['table'])

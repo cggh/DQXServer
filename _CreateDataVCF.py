@@ -18,8 +18,9 @@ sourcedir='.'
 
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
 #srcFile='3d7_hb3.gatk.both.release'
-srcFile='7g8_gb4.gatk.both.release'
-sys.argv=['',srcFile,'GATKCrosses','GATK2_3d7_hb3']
+#srcFile='7g8_gb4.gatk.both.release'
+srcFile='3d7_hb3.cortex.final'
+sys.argv=['',srcFile,'CORTEXCrosses','CORTEX_3d7_hb3']
 sourcedir='C:/Data/Test/Genome/SnpDataCross'
 #============= END OF FAKE STUFF ============================================
 
@@ -77,7 +78,7 @@ class DataProvider_VCF:
                 if len(tokens)==2:
                     key=tokens[0]
                     content=tokens[1]
-                    if key=='PARENT':
+                    if (key=='PARENT') or (key=='parents'):
                         self.parents.append(content)
                     if key=='FILTER':
                         items=self.parseHeaderComp(content)
@@ -113,6 +114,7 @@ class DataProvider_VCF:
         if self.colnr_format<0: raise Exception('Field FORMAT not found')
 
         self.sampleids=headercomps[self.colnr_format+1:]
+        self.sampleids=[x.replace('/','__') for x in self.sampleids]
 
         inputfile.close()
 
@@ -269,7 +271,7 @@ class DataProvider_VCF:
                                 if self.samplecomps[samplecompnr]['SourceID']==formatcomps[fcompnr]:
                                     thesamplecomppos=fcompnr
                             if thesamplecomppos<0:
-                                raise Exception('Unable to find format component "{0}" in line {1}\nFORMAT: {2}'.format(self.samplecomps[samplecompnr]['SourceID'],self.lineNr,linecomps[self.colnr_format]))
+                                print('\nUnable to find format component "{0}" in line {1}\nFORMAT: {2}\nLINE: {3}\n'.format(self.samplecomps[samplecompnr]['SourceID'],self.lineNr,linecomps[self.colnr_format],line))
                             samplecompposits.append(thesamplecomppos)
 
                         #parse per-sample data
@@ -286,7 +288,7 @@ class DataProvider_VCF:
                                         if cellval[0]!='.':
                                             theval=cellval[scomp['SourceSub']]
                                     except (KeyError,IndexError):
-                                        raise Exception('Unable to get per-sample information component "{0}" in line {1}\nFORMAT: {2}\nDATA: {3}'.format(scomp['ID'],self.lineNr,linecomps[self.colnr_format],linecomps[scolnr]))
+                                        raise Exception('Unable to get per-sample information component "{0}" in line {1}\nFORMAT: {2}\nDATA: {3}\nLINE: {4}'.format(scomp['ID'],self.lineNr,linecomps[self.colnr_format],linecomps[scolnr],line))
                                 rs[sid+'_'+scomp['ID']]=theval
                                 scompnr+=1
 

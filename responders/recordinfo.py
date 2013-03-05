@@ -4,7 +4,10 @@ def response(returndata):
     mytablename=returndata['tbname']
     encodedquery=returndata['qry']
 
-    db = DQXDbTools.OpenDatabase()
+    databaseName=None
+    if 'database' in returndata:
+        databaseName = returndata['database']
+    db = DQXDbTools.OpenDatabase(databaseName)
     cur = db.cursor()
 
     whc=DQXDbTools.WhereClause()
