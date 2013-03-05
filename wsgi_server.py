@@ -24,7 +24,7 @@ def application(environ, start_response):
         for item in response:
             yield item
     else:#respond to any other event with json
-        response = simplejson.dumps(response)
+        response = simplejson.dumps(response, use_decimal=True)
         status = '200 OK'
         response_headers = [('Content-type', 'application/json'),
                             ('Content-Length', str(len(response)))]
