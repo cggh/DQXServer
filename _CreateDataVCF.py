@@ -1,3 +1,4 @@
+
 import math
 import random
 import B64
@@ -19,9 +20,10 @@ sourcedir='.'
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
 #srcFile='3d7_hb3.gatk.both.release'
 #srcFile='7g8_gb4.gatk.both.release'
-srcFile='3d7_hb3.cortex.final'
-sys.argv=['',srcFile,'CORTEXCrosses','CORTEX_3d7_hb3']
-sourcedir='C:/Data/Test/Genome/SnpDataCross'
+#srcFile='3d7_hb3.cortex.final'
+#sys.argv=['',srcFile,'CORTEXCrosses','CORTEX_3d7_hb3']
+#sourcedir='C:/Data/Test/Genome/SnpDataCross'
+#sourcedir = ''
 #============= END OF FAKE STUFF ============================================
 
 if len(sys.argv)<2:
@@ -164,7 +166,8 @@ class DataProvider_VCF:
                     raise Exception('Tag "{0}" not present in SampleComponent {1}'.format(requiredTag,str(comp)))
 
         #Check presence of required per-position SNP components
-        requiredComponents = ['RefBase', 'AltBase', 'Filtered']
+#        requiredComponents = ['RefBase', 'AltBase', 'Filtered']
+        requiredComponents = ['RefBase', 'AltBase']
         for requiredCompID in requiredComponents:
             found=False
             for comp in settings['InfoComps']:
@@ -286,7 +289,8 @@ class DataProvider_VCF:
                                     try:
                                         cellval=samplecompvals[samplecompposits[scompnr]]
                                         if cellval[0]!='.':
-                                            theval=cellval[scomp['SourceSub']]
+                                            if scomp['SourceSub'] < len(cellval):
+                                                theval=cellval[scomp['SourceSub']]
                                     except (KeyError,IndexError):
                                         raise Exception('Unable to get per-sample information component "{0}" in line {1}\nFORMAT: {2}\nDATA: {3}\nLINE: {4}'.format(scomp['ID'],self.lineNr,linecomps[self.colnr_format],linecomps[scolnr],line))
                                 rs[sid+'_'+scomp['ID']]=theval
@@ -431,6 +435,8 @@ for rw in sourceFile.GetRowIterator():
 #Write SNP info components
     for infocomp in settings['InfoComps']:
         vl=rw[infocomp['ID']]
+        if vl == '':
+            vl= 'N'
         st=infocomp['theEncoder'].perform(vl)
         if len(st)!=infocomp['theEncoder'].getlength():
             raise Exception('Invalid encoded length')
