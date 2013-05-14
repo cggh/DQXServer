@@ -92,6 +92,8 @@ class ValueListCoder:
         CompressedRange=int(64**bytecount-10)
         Offset=MinVal
         Slope=(MaxVal-MinVal)/CompressedRange
+        if (Slope == 0):
+           Slope = 1
         result['Offset']=Offset
         result['Slope']=Slope
         result['ByteCount']=bytecount
