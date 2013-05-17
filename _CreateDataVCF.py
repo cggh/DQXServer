@@ -18,12 +18,8 @@ sourcedir='.'
 #"test"
 
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
-#srcFile='3d7_hb3.gatk.both.release'
-#srcFile='7g8_gb4.gatk.both.release'
-#srcFile='3d7_hb3.cortex.final'
-#sys.argv=['',srcFile,'CORTEXCrosses','CORTEX_3d7_hb3']
-#sourcedir='C:/Data/Test/Genome/SnpDataCross'
-#sourcedir = ''
+sys.argv=['','3d7_hb3.gatk.both.final','GATKCrosses']
+sourcedir='C:/Data/Test/Genome/SnpDataCrossFinal'
 #============= END OF FAKE STUFF ============================================
 
 if len(sys.argv)<2:
