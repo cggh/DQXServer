@@ -31,4 +31,4 @@ def application(environ, start_response):
         start_response(status, response_headers)
         yield response
 
-    print('@@@@ Responded to {0} in {1}s'.format(request_type, tm.Elapsed()))
+    print('@@@@ Responded to {0} in wall={1}s cpu={2}s'.format(request_type, tm.Elapsed(),tm.ElapsedCPU()))

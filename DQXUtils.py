@@ -2,6 +2,9 @@ import time
 
 class Timer:
     def __init__(self):
-        self.t0=time.clock()
+        self.t0=time.time()
+        self.t1=time.clock()
     def Elapsed(self):
-        return time.clock()-self.t0
+        return time.time()-self.t0
+    def ElapsedCPU(self):
+        return time.clock()-self.t1

@@ -1,5 +1,6 @@
 import B64
 import DQXDbTools
+import DQXUtils
 
 
 
@@ -32,7 +33,10 @@ def response(returndata):
         sqlquery="SELECT COUNT(*) FROM {0}".format(mytablename)
         if len(whc.querystring_params)>0:
             sqlquery+=" WHERE {0}".format(whc.querystring_params)
+        print('   executing count query...')
+        tm = DQXUtils.Timer()
         cur.execute(sqlquery,whc.queryparams)
+        print('   finished in {0}s'.format(tm.Elapsed()))
         returndata['TotalRecordCount']=cur.fetchone()[0]
 
 
