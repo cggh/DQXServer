@@ -20,6 +20,7 @@ sourcedir='.'
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
 #sys.argv=['','3d7_hb3.gatk.both.final','GATKCrosses']
 #sys.argv=['','3d7_hb3.cortex.final','CORTEXCrosses']
+#sys.argv=['','hb3_dd2.cortex.final','CORTEXCrosses']
 #sourcedir='C:/Data/Test/Genome/SnpDataCrossFinal'
 #============= END OF FAKE STUFF ============================================
 
@@ -471,7 +472,7 @@ for rw in sourceFile.GetRowIterator():
             vl=rw[sid+'_'+samplecomp['ID']]
             st=samplecomp['theEncoder'].perform(vl)
             if len(st)!=samplecomp['theEncoder'].getlength():
-                raise Exception('Invalid encoded length')
+                raise Exception('Invalid encoded length: samplecomp={0} | encoded={1} | expected length={2} | val={3}'.format(samplecomp['ID'],st,samplecomp['theEncoder'].getlength(),vl))
             of.write(st)
 
     #    for sid in sourceFile.sampleids:
