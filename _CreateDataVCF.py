@@ -18,9 +18,9 @@ sourcedir='.'
 #"test"
 
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
-sys.argv=['','3d7_hb3.gatk.both.final','GATKCrosses']
+#sys.argv=['','3d7_hb3.gatk.both.final','GATKCrosses']
 #sys.argv=['','3d7_hb3.cortex.final','CORTEXCrosses']
-sourcedir='C:/Data/Test/Genome/SnpDataCrossFinal'
+#sourcedir='C:/Data/Test/Genome/SnpDataCrossFinal'
 #============= END OF FAKE STUFF ============================================
 
 if len(sys.argv)<2:
