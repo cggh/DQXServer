@@ -61,6 +61,7 @@ def response(returndata):
     folder=returndata['folder']
     filterStatus= [a=='1' for a in list(returndata['filters'])]
     snpInfoRecLen=int(returndata['snpinforeclen'])
+    snpCallRecLen=int(returndata['samplecallinforeclen'])
 
     filterCount=len(filterStatus)
 
@@ -80,7 +81,6 @@ def response(returndata):
     f.close()
 
     seqvals={}
-    snpCallRecLen=4
     for seqid in seqids:
         f=open(datadir+'/'+chromoid+'_'+seqid+'.txt')
         f.seek(snpCallRecLen*idx1)
