@@ -4,10 +4,13 @@ import wsgi_server
 #Production deployment should be based on a formal web server environment such as Apache2
 try:
     from werkzeug.serving import run_simple
+    from werkzeug.wsgi import SharedDataMiddleware
     def start(port):
         print "Serving HTTP using werkzeug on port "+str(port)
-        run_simple('localhost', port, wsgi_server.application, use_reloader=True, threaded=True)
-
+        app = SharedDataMiddleware(wsgi_server.application, {
+            '/static': 'PATH_TO_YOUR_APP'
+        })
+        run_simple('0.0.0.0', port, app, use_reloader=True, threaded=True)
 except ImportError:
     print "******** ERROR: Werkzeug not found falling back to wsgiref! **********************"
     print "WARNING: this server is known not to be fully stable, notably when accessed from IE"
