@@ -15,9 +15,13 @@ class EncoderInt2B64(Encoder):
         Encoder.__init__(self,info)
         self.length=info['Len']
         self.b64=B64.B64()
+        self.maxval=64**self.length
     def perform(self,inp):
         if inp==None:
             return '~'*self.length
+        if int(inp)>=self.maxval:
+            print('WARNING: VALUE INT ENCODER EXCEEDS MAXIMUM {0} > {1}'.format(inp,self.maxval))
+            inp=self.maxval-1
         return self.b64.Int2B64(int(inp),self.length)
     def getlength(self):
         return self.length
@@ -42,7 +46,9 @@ class EncoderFloat2B64(Encoder):
             return '~'*self.length
         intval=int(round((float(inp)-self.min)*self.mulfac))
         if intval<0: intval=0
-        if intval>self.compressedRange: intval=self.compressedRange
+        if intval>self.compressedRange:
+            print('WARNING: Float out of range: {0} vs {1}'.format(inp,self.max))
+            intval=self.compressedRange
         return self.b64.Int2B64(intval,self.length)
     def getlength(self):
         return self.length

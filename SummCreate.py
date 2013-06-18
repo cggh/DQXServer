@@ -194,12 +194,16 @@ class DataProvider_TabbedFile:
         self.inputfilename=ifilename
     def GetRowIterator(self):
         inputfile=open(self.inputfilename,'r')
-        inputcolumns=inputfile.readline().rstrip('\n').split('\t')[1:]
+        separator='\t'
+        header=inputfile.readline().rstrip('\n')
+        if header.find('|')>0:
+            separator='|'
+        inputcolumns=header.split(separator)[1:]
         while True:
             line=inputfile.readline().rstrip('\n')
             if not(line):
                 break
-            linecomps=line.split('\t')
+            linecomps=line.split(separator)
             rs={}
             rs['position']=int(linecomps[0])
             for colnr in range(len(inputcolumns)):

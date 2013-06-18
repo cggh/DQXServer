@@ -18,12 +18,10 @@ sourcedir='.'
 #"test"
 
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
-#srcFile='3d7_hb3.gatk.both.release'
-#srcFile='7g8_gb4.gatk.both.release'
-#srcFile='3d7_hb3.cortex.final'
-#sys.argv=['',srcFile,'CORTEXCrosses','CORTEX_3d7_hb3']
-#sourcedir='C:/Data/Test/Genome/SnpDataCross'
-#sourcedir = ''
+#sys.argv=['','3d7_hb3.gatk.both.final','GATKCrosses']
+sys.argv=['','3d7_hb3.cortex.final','CORTEXCrosses']
+#sys.argv=['','hb3_dd2.cortex.final','CORTEXCrosses']
+sourcedir='/home/pvaut/Documents/Genome/SnpDataCrossFinal'
 #============= END OF FAKE STUFF ============================================
 
 if len(sys.argv)<2:
@@ -183,18 +181,18 @@ class DataProvider_VCF:
                     raise Exception('Tag "{0}" not present in InfoComponent {1}'.format(requiredTag,str(comp)))
 
         #Check presence of required per-sample SNP components
-        requiredComponents = ['covA', 'covD']
-        for requiredCompID in requiredComponents:
-            found=False
-            for comp in settings['SampleComps']:
-                if comp['ID']==requiredCompID:
-                    found=True
-            if not(found):
-                raise Exception('Missing required per-sample component "{0}"'.format(requiredCompID))
-        #Currently, the set of components that should be present here is exactly defined
-        if len(settings['SampleComps'])>len(requiredComponents):
-            raise Exception('Too many per-sample components')
-        pass
+#        requiredComponents = ['covA', 'covD']
+#        for requiredCompID in requiredComponents:
+#            found=False
+#            for comp in settings['SampleComps']:
+#                if comp['ID']==requiredCompID:
+#                    found=True
+#            if not(found):
+#                raise Exception('Missing required per-sample component "{0}"'.format(requiredCompID))
+#        #Currently, the set of components that should be present here is exactly defined
+#        if len(settings['SampleComps'])>len(requiredComponents):
+#            raise Exception('Too many per-sample components')
+#        pass
 
 
     def GetRowIterator(self):
@@ -284,13 +282,16 @@ class DataProvider_VCF:
                             samplecompvals=[x.split(',') for x in linecomps[scolnr].split(':')]
                             scompnr=0
                             for scomp in self.samplecomps:
-                                theval=0
+                                theval=None
                                 if (samplecompposits[scompnr]>=0) and (linecomps[scolnr]!='./.'):
                                     try:
                                         cellval=samplecompvals[samplecompposits[scompnr]]
                                         if cellval[0]!='.':
-                                            if scomp['SourceSub'] < len(cellval):
-                                                theval=cellval[scomp['SourceSub']]
+                                            if scomp['SourceSub'] == "0+1":
+                                                theval=float(cellval[0])+float(cellval[1])
+                                            else:
+                                                if scomp['SourceSub'] < len(cellval):
+                                                    theval=cellval[scomp['SourceSub']]
                                     except (KeyError,IndexError):
                                         raise Exception('Unable to get per-sample information component "{0}" in line {1}\nFORMAT: {2}\nDATA: {3}\nLINE: {4}'.format(scomp['ID'],self.lineNr,linecomps[self.colnr_format],linecomps[scolnr],line))
                                 rs[sid+'_'+scomp['ID']]=theval
@@ -365,6 +366,15 @@ for infocomp in settings['InfoComps']:
     print("    Encoder={0}".format(str(infocomp['theEncoder'].getInfo())))
 print('=======================================================================')
 
+
+print('=============== Report Sample Call Information components ============')
+for samplecomp in settings['SampleComps']:
+    print("ID={0}".format(samplecomp['ID']))
+    print("    SourceID={0}[{1}]".format(samplecomp['SourceID'],samplecomp['SourceSub']))
+    samplecomp['theEncoder']=DQXEncoder.GetEncoder(samplecomp['Encoder'])
+    print("    Encoder={0}".format(str(samplecomp['theEncoder'].getInfo())))
+print('=======================================================================')
+
 print('SAMPLES: '+','.join(sourceFile.sampleids))
 
 ################# Create metainfo file #########################################
@@ -373,6 +383,7 @@ ofile.write('Samples='+'\t'.join(sourceFile.sampleids)+'\n')
 infocompinfo=[]
 #Filter flag booleanlist
 infocompinfo.append({'ID':'FilterFlags', 'Name':'FilterFlags', 'Display':False, 'DataType':'BooleanList', "Encoder": {"ID": "BooleanListB64", "Count": len(sourceFile.filterList)}})
+
 #Other properties
 for infocomp in settings['InfoComps']:
     infoinfo={'ID': infocomp['ID'], 'Name': infocomp['Name'], 'Display': infocomp['Display']}
@@ -382,6 +393,18 @@ for infocomp in settings['InfoComps']:
     infoinfo['DataType']=infocomp['theEncoder'].getDataType()
     infocompinfo.append(infoinfo)
 ofile.write('SnpPositionFields='+simplejson.dumps(infocompinfo)+'\n')
+
+#Per-sample components
+infosampleinfo=[]
+for infocomp in settings['SampleComps']:
+    infoinfo={'ID': infocomp['ID']}
+    if 'Min' in infocomp: infoinfo['Min']=infocomp['Min']
+    if 'Max' in infocomp: infoinfo['Max']=infocomp['Max']
+    infoinfo['Encoder']=infocomp['theEncoder'].getInfo()
+    infoinfo['DataType']=infocomp['theEncoder'].getDataType()
+    infosampleinfo.append(infoinfo)
+ofile.write('SampleCallFields='+simplejson.dumps(infosampleinfo)+'\n')
+
 ofile.write('Filters='+'\t'.join(sourceFile.filterList)+'\n')
 if len(sourceFile.parents)>0:
     ofile.write('Parents='+'\t'.join(sourceFile.parents)+'\n')
@@ -442,10 +465,20 @@ for rw in sourceFile.GetRowIterator():
             raise Exception('Invalid encoded length')
         of.write(st)
 
+#Write sample call components
     for sid in sourceFile.sampleids:
         of=GetWriteFile(chromname,sid)
-        st=b64.Int2B64(int(rw[sid+'_covA']),2)+b64.Int2B64(int(rw[sid+'_covD']),2)
-        of.write(st)
+        for samplecomp in settings['SampleComps']:
+            vl=rw[sid+'_'+samplecomp['ID']]
+            st=samplecomp['theEncoder'].perform(vl)
+            if len(st)!=samplecomp['theEncoder'].getlength():
+                raise Exception('Invalid encoded length: samplecomp={0} | encoded={1} | expected length={2} | val={3}'.format(samplecomp['ID'],st,samplecomp['theEncoder'].getlength(),vl))
+            of.write(st)
+
+    #    for sid in sourceFile.sampleids:
+#        of=GetWriteFile(chromname,sid)
+#        st=b64.Int2B64(int(rw[sid+'_covA']),2)+b64.Int2B64(int(rw[sid+'_covD']),2)
+#        of.write(st)
 
     nr+=1
     if nr%500==0:
