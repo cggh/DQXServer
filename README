@@ -1,4 +1,6 @@
 To install:
+    sudo apt-get install python-dev
+    sudo pip install werkzeug
     pip install -r requirements.txt
 
 To run:
