@@ -7,10 +7,10 @@ class Wrapper(object):
         self.wrapped = wrapped
 
     def __getattr__(self, name):
-        try:
-            module = importlib.import_module('respondersraw.' + name)
-        except ImportError:
+        if name == '__file__':
             raise AttributeError
+
+        module = importlib.import_module('respondersraw.' + name)
         return module.response
 
 sys.modules[__name__+'raw'] = sys.modules[__name__]
