@@ -15,11 +15,14 @@ def response(environ):
         keep_blank_values=True
     )
 
+    filename=None
+
     #if 'filedata' not in post:
     #    return 'missing filedata'
-
     #fileitem = post["filedata"]
     fileitem=post#Note: if file is send directly using XMLHttpRequest, this is the way to read it
+
+    print(str(post))
 
 
     if fileitem.file:
@@ -48,6 +51,12 @@ def response(environ):
                     # environ['wsgi.errors'].flush()
                     # print '.',
 
-    print('Uploaded file '+filename)
-    response='filename='+filename
+    if filename:
+        print('Uploaded file '+filename)
+        response = 'filename='+filename
+    else:
+        print('Failed to upload file')
+        response = 'error=failed'
+
+
     return str(response)

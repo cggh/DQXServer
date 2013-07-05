@@ -3,6 +3,7 @@ import DQXUtils
 import simplejson
 import responders
 import uploadfile
+import cgi
 
 
 def application(environ, start_response):
@@ -32,11 +33,15 @@ def application(environ, start_response):
 
 
     tm = DQXUtils.Timer()
+
     try:
         resp_func = getattr(responders, request_type)#Fetch the handfler by request type, using some introspection magic in responders/__init__.py
     except AttributeError:
         raise Exception("Unknown request {0}".format(request_type))
+    returndata['environ']=environ
     response = resp_func(returndata)
+    del response['environ']
+
 
     #todo: make the response handling part of the handler, to avoid this branching
     #This will become necessary when we have more handlers with different response types (e.g. other downloads)
