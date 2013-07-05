@@ -1,9 +1,10 @@
 from urlparse import parse_qs
-import DQXUtils
+
 import simplejson
+
+import DQXUtils
 import responders
-import uploadfile
-import cgi
+from responders import uploadfile
 
 
 def application(environ, start_response):
@@ -22,18 +23,10 @@ def application(environ, start_response):
 
     request_type = returndata['datatype']
 
-    if request_type == 'uploadfile':
-        response = uploadfile.response(environ)
-        status = '200 OK'
-        response_headers = [('Content-type', 'application/json'),
-                            ('Content-Length', str(len(response)))]
-        start_response(status, response_headers)
-        yield response
-        return
-
 
     tm = DQXUtils.Timer()
 
+    #Get the handler and execute it
     try:
         resp_func = getattr(responders, request_type)#Fetch the handfler by request type, using some introspection magic in responders/__init__.py
     except AttributeError:

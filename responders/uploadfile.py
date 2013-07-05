@@ -6,8 +6,8 @@ import uuid
 
 #Based on https://github.com/thejimmyg/wsgi-file-upload
 
-def response(environ):
-
+def response(returndata):
+    environ=returndata['environ']
 
     post = cgi.FieldStorage(
         fp=environ['wsgi.input'],
@@ -22,7 +22,7 @@ def response(environ):
     #fileitem = post["filedata"]
     fileitem=post#Note: if file is send directly using XMLHttpRequest, this is the way to read it
 
-    print(str(post))
+    #print(str(post))
 
 
     if fileitem.file:
@@ -53,10 +53,10 @@ def response(environ):
 
     if filename:
         print('Uploaded file '+filename)
-        response = 'filename='+filename
+        returndata['filename'] = filename
     else:
         print('Failed to upload file')
-        response = 'error=failed'
+        returndata['Error'] = 'Failed'
 
 
-    return str(response)
+    return returndata

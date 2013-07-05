@@ -1,7 +1,6 @@
 import DQXDbTools
 import uuid
 
-#Find hits for gene patterns (or similar searches)
 def response(returndata):
 
     environ=returndata['environ']
