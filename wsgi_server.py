@@ -33,7 +33,6 @@ def application(environ, start_response):
         raise Exception("Unknown request {0}".format(request_type))
     returndata['environ']=environ
     response = resp_func(returndata)
-    del response['environ']
 
 
     #todo: make the response handling part of the handler, to avoid this branching
@@ -48,6 +47,7 @@ def application(environ, start_response):
         handled=true
 
     if not(handled):#respond to any other event with json
+        del response['environ']
         response = simplejson.dumps(response, use_decimal=True)
         status = '200 OK'
         response_headers = [('Content-type', 'application/json'),
