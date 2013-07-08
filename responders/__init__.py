@@ -11,7 +11,7 @@ class Wrapper(object):
             raise AttributeError
 
         module = importlib.import_module('respondersraw.' + name)
-        return module.response
+        return module
 
 sys.modules[__name__+'raw'] = sys.modules[__name__]
 sys.modules[__name__] = Wrapper(sys.modules[__name__])

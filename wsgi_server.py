@@ -23,30 +23,23 @@ def application(environ, start_response):
 
     request_type = returndata['datatype']
 
-
     tm = DQXUtils.Timer()
 
-    #Get the handler and execute it
     try:
-        resp_func = getattr(responders, request_type)#Fetch the handfler by request type, using some introspection magic in responders/__init__.py
+        #Fetch the handler by request type, using some introspection magic in responders/__init__.py
+        responder = getattr(responders, request_type)
     except AttributeError:
         raise Exception("Unknown request {0}".format(request_type))
-    returndata['environ']=environ
-    response = resp_func(returndata)
+    returndata['environ'] = environ
+    response = responder.response(returndata)
 
-
-    #todo: make the response handling part of the handler, to avoid this branching
-    #This will become necessary when we have more handlers with different response types (e.g. other downloads)
-    handled=False
-    if request_type == "downloadtable":#Respond to a download request with a text attachment
-        status = '200 OK'
-        response_headers = [('Content-type', 'text/plain'),('Content-Disposition','attachment; filename=download.txt')]
-        start_response(status, response_headers)
-        for item in response:
+    #Check for a custom response (eg in downloadtable)
+    if 'handler' in dir(responder):
+        for item in responder.handler(start_response, response):
             yield item
-        handled=True
 
-    if not(handled):#respond to any other event with json
+    else:
+    #Default is to respond with JSON
         del response['environ']
         response = simplejson.dumps(response, use_decimal=True)
         status = '200 OK'

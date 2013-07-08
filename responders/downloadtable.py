@@ -31,3 +31,11 @@ def response(returndata):
     for row in cur.fetchall() :
         line='\t'.join([str(x) for x in row])+'\n'
         yield line
+
+
+def handler(start_response, response):
+        status = '200 OK'
+        response_headers = [('Content-type', 'text/plain'),('Content-Disposition','attachment; filename=download.txt')]
+        start_response(status, response_headers)
+        for item in response:
+            yield item
