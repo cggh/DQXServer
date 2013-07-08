@@ -44,7 +44,7 @@ def application(environ, start_response):
         start_response(status, response_headers)
         for item in response:
             yield item
-        handled=true
+        handled=True
 
     if not(handled):#respond to any other event with json
         del response['environ']
