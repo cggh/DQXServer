@@ -108,10 +108,18 @@ class ValueListCoder:
         #!!!todo: ensure that all string have nice compatible ascii content
         result={}
         result['Encoding']="String"
+        result['Data']='~'.join([(item or '') for item in vals])
+        return result
+
+    def EncodeGeneric(self, vals):
+        result={}
+        result['Encoding']="String"
         result['Data']='~'.join([(str(item) or '') for item in vals])
         return result
 
     def EncodeByMethod(self, vals, methodid):
+        if methodid=='GN':
+            return self.EncodeGeneric(vals)
         if methodid=='ST':
             return self.EncodeStrings(vals)
         if methodid=='IN':
