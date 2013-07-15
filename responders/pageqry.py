@@ -83,4 +83,7 @@ def response(returndata):
     for ynr in yvalrange:
         returndata[mycolumns[ynr]['Name']]=valcoder.EncodeByMethod(pointsy[ynr],mycolumns[ynr]['Encoding'])
 
+    cur.close()
+    db.close()
+
     return returndata

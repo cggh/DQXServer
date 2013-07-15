@@ -32,6 +32,9 @@ def response(returndata):
         line='\t'.join([str(x) for x in row])+'\n'
         yield line
 
+    cur.close()
+    db.close()
+
 
 def handler(start_response, response):
         status = '200 OK'
