@@ -1,10 +1,14 @@
 from urlparse import parse_qs
-
+import importlib
 import simplejson
 
 import DQXUtils
 import responders
 from responders import uploadfile
+
+# import customresponders
+
+
 
 
 def application(environ, start_response):
@@ -25,11 +29,18 @@ def application(environ, start_response):
 
     tm = DQXUtils.Timer()
 
-    try:
-        #Fetch the handler by request type, using some introspection magic in responders/__init__.py
-        responder = getattr(responders, request_type)
-    except AttributeError:
-        raise Exception("Unknown request {0}".format(request_type))
+    if request_type == 'custom':
+        request_custommodule = returndata['respmodule']
+        request_customid = returndata['respid']
+        responder = importlib.import_module('customresponders.' + request_custommodule + '.' + request_customid)
+    else:
+        try:
+            #Fetch the handler by request type, using some introspection magic in responders/__init__.py
+            responder = getattr(responders, request_type)
+        except AttributeError:
+            raise Exception("Unknown request {0}".format(request_type))
+
+
     returndata['environ'] = environ
     response = responder.response(returndata)
 
