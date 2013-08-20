@@ -4,5 +4,5 @@
 DBSRV = 'localhost'
 DBUSER = 'root'
 DBPASS = '1234'
-DB = 'pfpopgen'
 BASEDIR = '/home/pvaut/Documents/Genome'
+#BASEDIR = '/mnt/storage/webapps'

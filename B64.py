@@ -114,7 +114,7 @@ class ValueListCoder:
     def EncodeGeneric(self, vals):
         result={}
         result['Encoding']="String"
-        result['Data']='~'.join([(str(item) or '') for item in vals])
+        result['Data']='~'.join([(str(item or '')) for item in vals])
         return result
 
     def EncodeByMethod(self, vals, methodid):
