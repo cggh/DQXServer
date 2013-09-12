@@ -6,3 +6,5 @@ DBUSER = 'root'
 DBPASS = '1234'
 BASEDIR = '/home/pvaut/Documents/Genome'
 #BASEDIR = '/mnt/storage/webapps'
+
+DB='datasetindex'
