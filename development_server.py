@@ -1,5 +1,6 @@
 import wsgi_server
 
+print('Starting development server')
 #This implements an embedded web server for development & testing usage
 #Production deployment should be based on a formal web server environment such as Apache2
 try:

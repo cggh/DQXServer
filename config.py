@@ -4,7 +4,9 @@
 DBSRV = 'localhost'
 DBUSER = 'root'
 DBPASS = '1234'
-BASEDIR = '/home/pvaut/Documents/Genome'
+BASEDIR = '/Users/pvaut/Documents/Genome'
 #BASEDIR = '/mnt/storage/webapps'
 
 DB='datasetindex'
+
+mysqlcommand = '/usr/local/mysql/bin/mysql'
