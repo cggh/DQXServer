@@ -18,6 +18,7 @@ DB='datasetindex'
 
 # Command to invoke the MySQL prompt
 mysqlcommand = '/usr/local/mysql/bin/mysql'
+#mysqlcommand = 'mysql'
 
 ###########################################################################################################
 # Server side file structure location
