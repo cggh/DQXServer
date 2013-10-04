@@ -118,9 +118,9 @@ propid=sourcefile.split('.')[0]
 
 cnf={}
 
-cnf["BlockSizeStart"] = 1
-cnf["BlockSizeIncrFactor"] = 2
-cnf["BlockSizeMax"] = 100000
+cnf["BlockSizeStart"] = blockSizeStart
+cnf["BlockSizeIncrFactor"] = blockSizeIncrFactor
+cnf["BlockSizeMax"] = blockSizeMax
 
 cnf["Properties"] = [
 	{ "ID": propid, "Type": "Float"}
