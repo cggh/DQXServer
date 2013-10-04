@@ -1,4 +1,5 @@
-
+from TableUtils import VTTable
+import sys
 
 class GFFParser:
     def __init__(self):
@@ -49,12 +50,18 @@ class GFFParser:
                             #                            prt=attribstr.partition(' "')
                             key,sp,value=attribstr.partition(' "')
                             value=value[:-1]
-                            if feattype=='CDS':
-                                if key=='gene_id': feat['id']=value
-                                if key=='gene_name': feat['name']=value
-                                feat['type']='gene'
+                            if feattype == 'CDS':
+                                if key == 'gene_id':
+                                    feat['id'] = value
+                                if key == 'gene_name':
+                                    feat['name'] += ' '+value
+                                if key == 'description':
+                                    print(value)
+                                    feat['name'] += ' '+value
+                                feat['type'] = 'gene'
                             else:
-                                if key=='gene_id': feat['parentid']=value
+                                if key == 'gene_id':
+                                    feat['parentid'] = value
                         self.features.append(feat)
             f.close()
 
@@ -84,13 +91,18 @@ class GFFParser:
                     attribs=parts[8].split(';')
                     feat['id']=''
                     feat['parentid']=''
-                    feat['name']=''
+                    feat['name'] = ''
                     for attribstr in attribs:
                         if '=' in attribstr:
                             key,value=attribstr.split('=')
-                            if key=='ID': feat['id']=value
-                            if key=='Parent': feat['parentid']=value
-                            if key=='Name': feat['name']=value
+                            if key == 'ID':
+                                feat['id'] = value
+                            if key == 'Parent':
+                                feat['parentid'] = value
+                            if key == 'Name':
+                                feat['name'] += value
+                            if key == 'description':
+                                feat['name'] += ' '+value
                     self.features.append(feat)
             f.close()
 
@@ -152,6 +164,7 @@ class GFFParser:
         print('saving')
         typemap={}
         f=open(filename,'w')
+        f.write('chromid\tfstart\tfstop\tfid\tfparentid\tftype\tfname\n')
         for feat in self.features:
             if not(feat['type'] in typemap):
                 typemap[feat['type']]=0
@@ -189,10 +202,46 @@ class GFFParser:
 #parser.save('{0}/features.txt'.format(basepath))
 
 
-basepath="C:/Data/Genomes/Plasmodium/Version3"
-filelist=['{0}/Pf3D7_v3.gff'.format(basepath)]
+# basepath="C:/Data/Genomes/Plasmodium/Version3"
+# filelist=['{0}/Pf3D7_v3.gff'.format(basepath)]
+# parser=GFFParser()
+# parser.targetfeaturelist=['repeat_region','pseudogene','snRNA','tRNA','centromere','pseudogenic_exon','pseudogenic_transcript','rRNA','snoRNA','polypeptide_motif','ncRNA']
+# parser.parseGFF(filelist)
+# parser.Process()
+# parser.save('{0}/features.txt'.format(basepath))
+
+basepath = '.'
+
+#============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
+if False:
+    basepath = '/Users/pvaut/Documents/Data/Genome/Ag'
+    sys.argv = ['', 'Anopheles-gambiae-PEST_BASEFEATURES_AgamP3.7.gff3']
+#============= END OF FAKE STUFF ============================================
+
+
+if len(sys.argv)<2:
+    print('Usage: COMMAND GFFFileName')
+    sys.exit()
+
+sourcefile = sys.argv[1]
+
+
+filelist=['{0}/{1}'.format(basepath,sourcefile)]
 parser=GFFParser()
-parser.targetfeaturelist=['repeat_region','pseudogene','snRNA','tRNA','centromere','pseudogenic_exon','pseudogenic_transcript','rRNA','snoRNA','polypeptide_motif','ncRNA']
+#parser.targetfeaturelist=['gene','mRNA']
+#parser.targetfeaturelist=['repeat_region','pseudogene','snRNA','tRNA','centromere','pseudogenic_exon','pseudogenic_transcript','rRNA','snoRNA','polypeptide_motif','ncRNA']
 parser.parseGFF(filelist)
 parser.Process()
-parser.save('{0}/features.txt'.format(basepath))
+parser.save('{0}/annotation.txt'.format(basepath))
+
+tb = VTTable.VTTable()
+tb.allColumnsText = True
+tb.LoadFile(basepath+'/annotation.txt')
+tb.ConvertColToValue('fstart')
+tb.ConvertColToValue('fstop')
+tb.CalcCol('fnames', lambda x: x, 'fname')
+tb.CalcCol('descr', lambda: '')
+tb.CalcCol('strand', lambda: '')
+tb.PrintRows(0,10)
+tb.SaveSQLCreation(basepath+'/annotation_create.sql','annotation')
+tb.SaveSQLDump(basepath+'/annotation_dump.sql','annotation')

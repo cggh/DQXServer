@@ -3,6 +3,7 @@ scripts/DQX
 scripts/Local
 .idea
 customresponders
+Convertors/TableUtils
 
 #################
 ## Eclipse
