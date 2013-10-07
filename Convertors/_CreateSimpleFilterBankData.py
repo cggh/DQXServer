@@ -1,14 +1,15 @@
 import math
-import DQXEncoder
 import os
 import simplejson
 import sys
 
+import DQXEncoder
+
 basedir = '.'
 
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
-if True:
-    basedir = '/Users/pvaut/Documents/Data/Genome/Test'
+if False:
+    basedir = '/home/pvaut/Documents/Genome/SummaryTracks/pf21viewtracks/Uniqueness'
     sys.argv = ['', 'Uniqueness.txt', '0', '100', '5', '2', '100000']
 #============= END OF FAKE STUFF ============================================
 
@@ -25,7 +26,15 @@ blockSizeStart = int(sys.argv[4])
 blockSizeIncrFactor = int(sys.argv[5])
 blockSizeMax = int(sys.argv[6])
 
-
+class Level:
+    def __init(self):
+        self.blocksize = None
+        self.currentblockend = 0
+        self.sum = 0
+        self.count = 0
+        self.min = 1.0e99
+        self.max = -1.0e99
+        self.outputfile = None
 
 
 class Summariser:
@@ -41,12 +50,14 @@ class Summariser:
         self.levels = []
         blocksize = self.blockSizeStart
         while blocksize <= self.blockSizeMax:
-            level = { 'blocksize':blocksize, 'currentblockend':blocksize }
-            level['sum'] = 0
-            level['count'] = 0
-            level['min'] = 1.0e99
-            level['max'] = -1.0e99
-            level['outputfile'] = open(self.outputFolder+'/Summ_'+self.chromosome+'_'+str(blocksize), 'w')
+            level = Level()
+            level.blocksize = blocksize
+            level.currentblockend = blocksize
+            level.sum = 0
+            level.count = 0
+            level.min = 1.0e99
+            level.max = -1.0e99
+            level.outputfile = open(self.outputFolder+'/Summ_'+self.chromosome+'_'+str(blocksize), 'w')
             self.levels.append(level)
             blocksize *= self.blockSizeIncrFactor
         print(str(self.levels))
@@ -57,40 +68,40 @@ class Summariser:
             if pos <= self.lastpos:
                 raise Exception('Positions should be strictly ordered')
             for level in self.levels:
-                while pos>=level['currentblockend']:
+                while pos>=level.currentblockend:
                     self.CloseCurrentBlock(level)
                     self.StartNextBlock(level)
-                level['sum'] += val
-                level['count'] += 1
-                level['min'] = min(level['min'], val)
-                level['max'] = max(level['max'], val)
+                level.sum += val
+                level.count += 1
+                level.min = min(level.min, val)
+                level.max = max(level.max, val)
 
     def CloseCurrentBlock(self, level):
-        if level['count']==0:
-            level['sum'] = None
-            level['min'] = None
-            level['max'] = None
+        if level.count == 0:
+            level.sum = None
+            level.min = None
+            level.max = None
         else:
-            level['sum'] /= level['count']
-        level['outputfile'].write('{0}{1}{2}'.format(
-            self.encoder.perform(level['sum']),
-            self.encoder.perform(level['min']),
-            self.encoder.perform(level['max'])
+            level.sum /= level.count
+        level.outputfile.write('{0}{1}{2}'.format(
+            self.encoder.perform(level.sum),
+            self.encoder.perform(level.min),
+            self.encoder.perform(level.max)
         ))
 
 
     def StartNextBlock(self, level):
-        level['currentblockend'] += level['blocksize']
-        level['sum'] = 0
-        level['count'] = 0
-        level['min'] = 1.0e99
-        level['max'] = -1.0e99
+        level.currentblockend += level.blocksize
+        level.sum = 0
+        level.count = 0
+        level.min = 1.0e99
+        level.max = -1.0e99
 
 
     def Finalise(self):
         for level in self.levels:
             self.CloseCurrentBlock(level)
-            level['outputfile'].close()
+            level.outputfile.close()
 
 
 

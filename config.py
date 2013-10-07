@@ -17,15 +17,16 @@ DBPASS = '1234'
 DB='datasetindex'
 
 # Command to invoke the MySQL prompt
-mysqlcommand = '/usr/local/mysql/bin/mysql'
-#mysqlcommand = 'mysql'
+#mysqlcommand = '/usr/local/mysql/bin/mysql'
+mysqlcommand = 'mysql'
 
 ###########################################################################################################
 # Server side file structure location
 ###########################################################################################################
 
 # Root directory of the server side file structure
-BASEDIR = '/Users/pvaut/Documents/Genome'
+#BASEDIR = '/Users/pvaut/Documents/Genome'
 #BASEDIR = '/mnt/storage/webapps'
+BASEDIR = '/home/pvaut/Documents/Genome'
 
 
