@@ -145,5 +145,9 @@ def CreateOrderByStatement(orderstr,reverse=False):
     dirstr=""
     if reverse: dirstr=" DESC"
     #note the following sql if construct is used to make sure that sorting always puts absent values at the end, which is what we want
-    return ', '.join( [ "IF(ISNULL({0}),1,0),{0}{1}".format(field,dirstr) for field in orderstr.split('~') ] )
-#    return ', '.join( [ "{0}{1}".format(field,dirstr) for field in orderstr.split('~') ] )
+
+    ### !!! todo: make this choice dependent on client
+    # option 1 = better, slower (absent appear beneath)
+    # opten 2 = sloppier, faster
+#    return ', '.join( [ "IF(ISNULL({0}),1,0),{0}{1}".format(field,dirstr) for field in orderstr.split('~') ] )
+    return ', '.join( [ "{0}{1}".format(field,dirstr) for field in orderstr.split('~') ] )

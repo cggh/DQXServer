@@ -83,15 +83,15 @@ class ValueListCoder:
         result['Encoding']="FloatAsIntB64"
         MinVal=0
         MaxVal=1
-        nonemptyvals=[x for x in vals if x is not None]
+        nonemptyvals=[float(x) for x in vals if x is not None]
         if (nonemptyvals):
             MinVal=min(nonemptyvals)
             MaxVal=max(nonemptyvals)
             if MaxVal==MinVal: MaxVal=MinVal+1
 
         CompressedRange=int(64**bytecount-10)
-        Offset=MinVal
-        Slope=(MaxVal-MinVal)/CompressedRange
+        Offset=1.0*MinVal
+        Slope=1.0*(MaxVal-MinVal)/CompressedRange
         if (Slope == 0):
            Slope = 1
         result['Offset']=Offset
@@ -100,7 +100,7 @@ class ValueListCoder:
 #        result['Data']=''.join([self.b64codec.Int2B64(int((vl-Offset)/Slope),bytecount) for vl in vals])
         absentcode='~' * bytecount#this string is used to encode an absent value
         result['Data']=''.join(
-            [vl is None and (absentcode) or (self.b64codec.Int2B64(int((vl-Offset)/Slope),bytecount)) for vl in vals]
+            [vl is None and (absentcode) or (self.b64codec.Int2B64(int((float(vl)-Offset)/Slope),bytecount)) for vl in vals]
         )
         return result
 
