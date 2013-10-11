@@ -13,7 +13,7 @@ from responders import uploadfile
 
 def application(environ, start_response):
     returndata = dict((k,v[0]) for k,v in parse_qs(environ['QUERY_STRING']).items())
-    print('REQUEST: '+str(environ))
+    #print('REQUEST: '+str(environ))
 
     if 'datatype' not in returndata:
         print('--> request does not contain datatype')
