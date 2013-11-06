@@ -31,12 +31,13 @@ def response(returndata):
     )
 
     if len(whc.querystring_params)>0:
-        sqlquery+=" WHERE {0}".format(whc.querystring_params)
+        sqlquery += " WHERE {0}".format(whc.querystring_params)
 
     if len(myorderfield)>0:
-        sqlquery+=" ORDER BY {0}".format(myorderfield)
+        sqlquery += " ORDER BY {0}".format(myorderfield)
 
-    cur.execute(sqlquery,whc.queryparams)
+    print('>>>>>>QRY='+sqlquery)
+    cur.execute(sqlquery, whc.queryparams)
 
     returndata['DataType']='Points'
     pointsx=[]

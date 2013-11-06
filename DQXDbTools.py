@@ -65,10 +65,11 @@ class WhereClause:
 
     def _CreateSelectStatementSub_Comparison(self,statm):
         #TODO: check that statm['ColName'] corresponds to a valid column name in the table (to avoid SQL injection)
-        if not(statm['Tpe'] in ['=', '<>', '<', '>', '<=', '>=', '!=', 'LIKE', 'CONTAINS', 'NOTCONTAINS', 'STARTSWITH', 'ISPRESENT', 'ISABSENT', '=FIELD', '<>FIELD', '<FIELD', '>FIELD']):
+        if not(statm['Tpe'] in ['=', '<>', '<', '>', '<=', '>=', '!=', 'LIKE', 'CONTAINS', 'NOTCONTAINS', 'STARTSWITH', 'ISPRESENT', 'ISABSENT', '=FIELD', '<>FIELD', '<FIELD', '>FIELD', 'between']):
             raise Exception("Invalid comparison statement {0}".format(statm['Tpe']))
 
         processed=False
+
 
         if statm['Tpe']=='ISPRESENT':
             processed=True
@@ -101,6 +102,13 @@ class WhereClause:
             self.querystring_params+='{0} {4} {1} * {2} + {3}'.format(ToSafeIdentifier(statm['ColName']),self.ParameterPlaceHolder,ToSafeIdentifier(statm['ColName2']),self.ParameterPlaceHolder,operatorstr)
             self.queryparams.append(ToSafeIdentifier(statm['Factor']))
             self.queryparams.append(ToSafeIdentifier(statm['Offset']))
+
+        if statm['Tpe'] == 'between':
+            processed = True
+            self.querystring += ToSafeIdentifier(statm['ColName'])+' between '+ToSafeIdentifier(statm["CompValueMin"])+' and '+ToSafeIdentifier(statm["CompValueMax"])
+            self.querystring_params += '{0} between {1} and {1}'.format(ToSafeIdentifier(statm['ColName']), self.ParameterPlaceHolder)
+            self.queryparams.append(statm["CompValueMin"])
+            self.queryparams.append(statm["CompValueMax"])
 
         if not(processed):
             decoval=statm['CompValue']
