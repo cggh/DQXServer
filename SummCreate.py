@@ -232,8 +232,10 @@ class Creator:
         print('Initialising Creator, directory="{0}", config="{1}"'.format(self.datadir,self.config))
         configdata=ReadJsonFile(self.datadir+'/'+self.config+".cnf")
 
-        self.SourceFilePattern=configdata['SourceFilePattern']
-        self.SourceFileType=configdata['SourceFileType']
+        if 'SourceFilePattern' in configdata:
+            self.SourceFilePattern=configdata['SourceFilePattern']
+        if 'SourceFileType' in configdata:
+            self.SourceFileType=configdata['SourceFileType']
         self.BlockSizeStart=int(configdata['BlockSizeStart'])
         self.BlockSizeIncrFactor=int(configdata['BlockSizeIncrFactor'])
         self.BlockSizeMax=int(configdata['BlockSizeMax'])

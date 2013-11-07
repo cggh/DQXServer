@@ -65,10 +65,11 @@ class WhereClause:
 
     def _CreateSelectStatementSub_Comparison(self,statm):
         #TODO: check that statm['ColName'] corresponds to a valid column name in the table (to avoid SQL injection)
-        if not(statm['Tpe'] in ['=', '<>', '<', '>', '<=', '>=', '!=', 'LIKE', 'CONTAINS', 'NOTCONTAINS', 'STARTSWITH', 'ISPRESENT', 'ISABSENT', '=FIELD', '<>FIELD', '<FIELD', '>FIELD']):
+        if not(statm['Tpe'] in ['=', '<>', '<', '>', '<=', '>=', '!=', 'LIKE', 'CONTAINS', 'NOTCONTAINS', 'STARTSWITH', 'ISPRESENT', 'ISABSENT', '=FIELD', '<>FIELD', '<FIELD', '>FIELD', 'between']):
             raise Exception("Invalid comparison statement {0}".format(statm['Tpe']))
 
         processed=False
+
 
         if statm['Tpe']=='ISPRESENT':
             processed=True
@@ -101,6 +102,13 @@ class WhereClause:
             self.querystring_params+='{0} {4} {1} * {2} + {3}'.format(ToSafeIdentifier(statm['ColName']),self.ParameterPlaceHolder,ToSafeIdentifier(statm['ColName2']),self.ParameterPlaceHolder,operatorstr)
             self.queryparams.append(ToSafeIdentifier(statm['Factor']))
             self.queryparams.append(ToSafeIdentifier(statm['Offset']))
+
+        if statm['Tpe'] == 'between':
+            processed = True
+            self.querystring += ToSafeIdentifier(statm['ColName'])+' between '+ToSafeIdentifier(statm["CompValueMin"])+' and '+ToSafeIdentifier(statm["CompValueMax"])
+            self.querystring_params += '{0} between {1} and {1}'.format(ToSafeIdentifier(statm['ColName']), self.ParameterPlaceHolder)
+            self.queryparams.append(statm["CompValueMin"])
+            self.queryparams.append(statm["CompValueMax"])
 
         if not(processed):
             decoval=statm['CompValue']
@@ -145,5 +153,9 @@ def CreateOrderByStatement(orderstr,reverse=False):
     dirstr=""
     if reverse: dirstr=" DESC"
     #note the following sql if construct is used to make sure that sorting always puts absent values at the end, which is what we want
-    return ', '.join( [ "IF(ISNULL({0}),1,0),{0}{1}".format(field,dirstr) for field in orderstr.split('~') ] )
-#    return ', '.join( [ "{0}{1}".format(field,dirstr) for field in orderstr.split('~') ] )
+
+    ### !!! todo: make this choice dependent on client
+    # option 1 = better, slower (absent appear beneath)
+    # opten 2 = sloppier, faster
+#    return ', '.join( [ "IF(ISNULL({0}),1,0),{0}{1}".format(field,dirstr) for field in orderstr.split('~') ] )
+    return ', '.join( [ "{0}{1}".format(field,dirstr) for field in orderstr.split('~') ] )

@@ -1,4 +1,5 @@
-
+from TableUtils import VTTable
+import sys
 
 class GFFParser:
     def __init__(self):
@@ -49,12 +50,19 @@ class GFFParser:
                             #                            prt=attribstr.partition(' "')
                             key,sp,value=attribstr.partition(' "')
                             value=value[:-1]
-                            if feattype=='CDS':
-                                if key=='gene_id': feat['id']=value
-                                if key=='gene_name': feat['name']=value
-                                feat['type']='gene'
+                            if feattype == 'CDS':
+                                if key == 'gene_id':
+                                    feat['id'] = value
+                                if key == 'gene_name':
+                                    feat['name'] += ' '+value
+                                if key == 'description':
+                                    feat['name'] += ' '+value
+                                if key == 'Alias':
+                                    print('alias: '+value)
+                                feat['type'] = 'gene'
                             else:
-                                if key=='gene_id': feat['parentid']=value
+                                if key == 'gene_id':
+                                    feat['parentid'] = value
                         self.features.append(feat)
             f.close()
 
@@ -67,7 +75,7 @@ class GFFParser:
             f=open(filename,'r')
             for line in f.readlines():
                 line=line.rstrip('\n')
-                if line=='##gff-version 3':
+                if line=='##gff-version 3' or line=='##gff-version\t3':
                     annotationreading=True
                 if line=='##FASTA':
                     annotationreading=False
@@ -84,13 +92,29 @@ class GFFParser:
                     attribs=parts[8].split(';')
                     feat['id']=''
                     feat['parentid']=''
-                    feat['name']=''
+                    feat['name'] = ''
+                    feat['names'] = ''
+                    feat['description'] = ''
                     for attribstr in attribs:
                         if '=' in attribstr:
                             key,value=attribstr.split('=')
-                            if key=='ID': feat['id']=value
-                            if key=='Parent': feat['parentid']=value
-                            if key=='Name': feat['name']=value
+                            if key == 'ID':
+                                feat['id'] = value
+                            if key == 'Parent':
+                                feat['parentid'] = value
+                            if key == 'Name':
+                                feat['name'] += value
+                                feat['names'] += value
+                            if key == 'description':
+                                feat['descr'] = value
+                            if key == 'Alias':
+                                if len(feat['names']) > 0:
+                                    feat['names'] +=','
+                                feat['names'] += value
+                    if len(feat['names']) > 200:
+                        feat['names'] = feat['names'][0:195]+'...'
+                    if len(feat['descr']) > 200:
+                        feat['descr'] = feat['descr'][0:195]+'...'
                     self.features.append(feat)
             f.close()
 
@@ -152,6 +176,7 @@ class GFFParser:
         print('saving')
         typemap={}
         f=open(filename,'w')
+        f.write('chromid\tfstart\tfstop\tfid\tfparentid\tftype\tfname\tfnames\tdescr\n')
         for feat in self.features:
             if not(feat['type'] in typemap):
                 typemap[feat['type']]=0
@@ -163,7 +188,9 @@ class GFFParser:
                 f.write(feat['id']+'\t')
                 f.write(''+'\t')
                 f.write(feat['type']+'\t')
-                f.write(feat['name'])
+                f.write(feat['name']+'\t')
+                f.write(feat['names']+'\t')
+                f.write(feat['descr'])
                 f.write('\n')
                 for child in feat['children']:
                     if child['type']==self.exonid:
@@ -173,7 +200,7 @@ class GFFParser:
                         f.write(child['id']+'\t')
                         f.write(feat['id']+'\t')
                         f.write(child['type']+'\t')
-                        f.write(child['name'])
+                        f.write(child['name']+'\t\t\t')
                         f.write('\n')
         f.close()
         print(str(typemap))
@@ -189,10 +216,46 @@ class GFFParser:
 #parser.save('{0}/features.txt'.format(basepath))
 
 
-basepath="C:/Data/Genomes/Plasmodium/Version3"
-filelist=['{0}/Pf3D7_v3.gff'.format(basepath)]
+# basepath="C:/Data/Genomes/Plasmodium/Version3"
+# filelist=['{0}/Pf3D7_v3.gff'.format(basepath)]
+# parser=GFFParser()
+# parser.targetfeaturelist=['repeat_region','pseudogene','snRNA','tRNA','centromere','pseudogenic_exon','pseudogenic_transcript','rRNA','snoRNA','polypeptide_motif','ncRNA']
+# parser.parseGFF(filelist)
+# parser.Process()
+# parser.save('{0}/features.txt'.format(basepath))
+
+basepath = '.'
+
+#============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
+if True:
+    basepath = '/home/pvaut/Documents/Genome/PfPopgen30'
+    sys.argv = ['', 'PlasmoDB-9.0_Pfalciparum3D7.gff']
+#============= END OF FAKE STUFF ============================================
+
+
+if len(sys.argv)<2:
+    print('Usage: COMMAND GFFFileName')
+    sys.exit()
+
+sourcefile = sys.argv[1]
+
+
+filelist=['{0}/{1}'.format(basepath,sourcefile)]
 parser=GFFParser()
-parser.targetfeaturelist=['repeat_region','pseudogene','snRNA','tRNA','centromere','pseudogenic_exon','pseudogenic_transcript','rRNA','snoRNA','polypeptide_motif','ncRNA']
+#parser.targetfeaturelist=['gene','mRNA']
+#parser.targetfeaturelist=['repeat_region','pseudogene','snRNA','tRNA','centromere','pseudogenic_exon','pseudogenic_transcript','rRNA','snoRNA','polypeptide_motif','ncRNA']
 parser.parseGFF(filelist)
 parser.Process()
-parser.save('{0}/features.txt'.format(basepath))
+parser.save('{0}/annotation.txt'.format(basepath))
+
+tb = VTTable.VTTable()
+tb.allColumnsText = True
+tb.LoadFile(basepath+'/annotation.txt')
+tb.ConvertColToValue('fstart')
+tb.ConvertColToValue('fstop')
+#tb.CalcCol('fnames', lambda x: x, 'fname')
+#tb.CalcCol('descr', lambda: '')
+#tb.CalcCol('strand', lambda: '')
+tb.PrintRows(0,10)
+tb.SaveSQLCreation(basepath+'/annotation_create.sql','annotation')
+tb.SaveSQLDump(basepath+'/annotation_dump.sql','annotation')

@@ -5,10 +5,12 @@ import DQXUtils
 
 
 def response(returndata):
-    mytablename=returndata['tbname']
-    encodedquery=returndata['qry']
-    myorderfield=returndata['order']
-    sortreverse=int(returndata['sortreverse'])>0
+
+    mytablename = returndata['tbname']
+    encodedquery = returndata['qry']
+    myorderfield = returndata['order']
+    sortreverse = int(returndata['sortreverse']) > 0
+    isdistinct = ('distinct' in returndata) and (int(returndata['distinct']) > 0)
 
     mycolumns=DQXDbTools.ParseColumnEncoding(returndata['collist'])
 
@@ -48,12 +50,15 @@ def response(returndata):
     if rownr1<0: rownr1=0
     if rownr2<=rownr1: rownr2=rownr1+1
 
-    sqlquery="SELECT {0} FROM {1}".format(','.join([x['Name'] for x in mycolumns]), mytablename)
+    sqlquery = "SELECT "
+    if isdistinct:
+        sqlquery = "SELECT DISTINCT "
+    sqlquery += "{0} FROM {1}".format(','.join([x['Name'] for x in mycolumns]), mytablename)
     if len(whc.querystring_params)>0:
-        sqlquery+=" WHERE {0}".format(whc.querystring_params)
+        sqlquery += " WHERE {0}".format(whc.querystring_params)
     if len(myorderfield)>0:
-        sqlquery+=" ORDER BY {0}".format(DQXDbTools.CreateOrderByStatement(myorderfield,sortreverse))
-    sqlquery+=" LIMIT {0}, {1}".format(rownr1,rownr2-rownr1+1)
+        sqlquery += " ORDER BY {0}".format(DQXDbTools.CreateOrderByStatement(myorderfield,sortreverse))
+    sqlquery += " LIMIT {0}, {1}".format(rownr1,rownr2-rownr1+1)
 
     print('################################################')
     print('###QRY:'+sqlquery)
@@ -82,5 +87,8 @@ def response(returndata):
     returndata['XValues']=valcoder.EncodeIntegersByDifferenceB64(pointsx)
     for ynr in yvalrange:
         returndata[mycolumns[ynr]['Name']]=valcoder.EncodeByMethod(pointsy[ynr],mycolumns[ynr]['Encoding'])
+
+    cur.close()
+    db.close()
 
     return returndata
