@@ -10,6 +10,9 @@ def OpenDatabase(database=None):
         database =  config.DB
     return MySQLdb.connect(host=config.DBSRV, user=config.DBUSER, passwd=config.DBPASS, db=database, charset='utf8')
 
+def OpenNoDatabase():
+    return MySQLdb.connect(host=config.DBSRV, user=config.DBUSER, passwd=config.DBPASS, charset='utf8')
+
 
 def ToSafeIdentifier(st):
     removelist=['"',"'",';','(',')']
