@@ -17,8 +17,12 @@ DBPASS = '1234'
 DB='datasetindex'
 
 # Command to invoke the MySQL prompt
-#mysqlcommand = '/usr/local/mysql/bin/mysql'
-mysqlcommand = 'mysql'
+mysqlcommand = '/usr/local/mysql/bin/mysql'
+#mysqlcommand = 'mysql'
+
+# Command to invoke python
+pythoncommand = '/usr/local/bin/python'
+#pythoncommand = 'python'
 
 pythoncommand = 'python'
 
@@ -30,5 +34,3 @@ pythoncommand = 'python'
 #BASEDIR = '/mnt/storage/webapps'
 BASEDIR = '/home/pvaut/Documents/Genome'
 SOURCEDATADIR = '/home/pvaut/WebstormProjects/panoptes/sampledata'
-
-
