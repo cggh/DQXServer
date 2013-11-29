@@ -1,5 +1,6 @@
 import time
 import os
+import re
 
 class Timer:
     def __init__(self):
@@ -13,3 +14,10 @@ class Timer:
 
 def GetDQXServerPath():
     return os.path.dirname(os.path.realpath(__file__))
+
+
+identifierMatcher = re.compile(r"^[^\d\W]\w*\Z")
+
+def CheckValidIdentifier(id):
+    if re.match(identifierMatcher, id) is None:
+        raise Exception('Invalid identifier: '+id)

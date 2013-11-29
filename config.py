@@ -24,13 +24,14 @@ mysqlcommand = '/usr/local/mysql/bin/mysql'
 pythoncommand = '/usr/local/bin/python'
 #pythoncommand = 'python'
 
-pythoncommand = 'python'
 
 ###########################################################################################################
 # Server side file structure location
 #########################################################################################################
 # Root directory of the server side file structure
-#BASEDIR = '/Users/pvaut/Documents/Genome'
+BASEDIR = '/Users/pvaut/Documents/Genome'
 #BASEDIR = '/mnt/storage/webapps'
-BASEDIR = '/home/pvaut/Documents/Genome'
-SOURCEDATADIR = '/home/pvaut/WebstormProjects/panoptes/sampledata'
+#BASEDIR = '/home/pvaut/Documents/Genome'
+
+#SOURCEDATADIR = '/home/pvaut/WebstormProjects/panoptes/sampledata'
+SOURCEDATADIR = '/Users/pvaut/Documents/SourceCode/Webapps/panoptes/sampledata'
