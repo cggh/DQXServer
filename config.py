@@ -20,6 +20,8 @@ DB='datasetindex'
 #mysqlcommand = '/usr/local/mysql/bin/mysql'
 mysqlcommand = 'mysql'
 
+pythoncommand = 'python'
+
 ###########################################################################################################
 # Server side file structure location
 #########################################################################################################
@@ -27,5 +29,6 @@ mysqlcommand = 'mysql'
 #BASEDIR = '/Users/pvaut/Documents/Genome'
 #BASEDIR = '/mnt/storage/webapps'
 BASEDIR = '/home/pvaut/Documents/Genome'
+SOURCEDATADIR = '/home/pvaut/WebstormProjects/panoptes/sampledata'
 
 

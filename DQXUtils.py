@@ -1,4 +1,5 @@
 import time
+import os
 
 class Timer:
     def __init__(self):
@@ -8,3 +9,7 @@ class Timer:
         return time.time()-self.t0
     def ElapsedCPU(self):
         return time.clock()-self.t1
+
+
+def GetDQXServerPath():
+    return os.path.dirname(os.path.realpath(__file__))
