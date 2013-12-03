@@ -32,7 +32,10 @@ def application(environ, start_response):
     if request_type == 'custom':
         request_custommodule = returndata['respmodule']
         request_customid = returndata['respid']
-        responder = importlib.import_module('customresponders.' + request_custommodule + '.' + request_customid)
+        try:
+            responder = importlib.import_module('customresponders.' + request_custommodule + '.' + request_customid)
+        except ImportError:
+            raise Exception("Unknown custom module {0}.{1}".format(request_custommodule, request_customid))
     else:
         try:
             #Fetch the handler by request type, using some introspection magic in responders/__init__.py
