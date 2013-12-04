@@ -85,9 +85,9 @@ class Summariser:
         else:
             level.sum /= level.count
         level.outputfile.write('{0}{1}{2}'.format(
-            self.encoder.perform(min(level.sum, max)),
-            self.encoder.perform(min(level.min, max)),
-            self.encoder.perform(min(level.max, max))
+            self.encoder.perform(min(level.sum, maxval)),
+            self.encoder.perform(min(level.min, maxval)),
+            self.encoder.perform(min(level.max, maxval))
         ))
 
 
