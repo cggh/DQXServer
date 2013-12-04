@@ -2,6 +2,7 @@ import math
 import os
 import simplejson
 import sys
+import math
 
 import DQXEncoder
 
@@ -84,9 +85,9 @@ class Summariser:
         else:
             level.sum /= level.count
         level.outputfile.write('{0}{1}{2}'.format(
-            self.encoder.perform(level.sum),
-            self.encoder.perform(level.min),
-            self.encoder.perform(level.max)
+            self.encoder.perform(math.min(level.sum, max)),
+            self.encoder.perform(math.min(level.min, max)),
+            self.encoder.perform(math,min(level.max, max))
         ))
 
 
