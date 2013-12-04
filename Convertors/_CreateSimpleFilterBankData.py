@@ -187,7 +187,11 @@ while True:
     comps = line.split('\t')
     chromosome = comps[0]
     pos = int(comps[1])
-    val = float(comps[2])
+    val = None
+    try:
+        val = float(comps[2])
+    except:
+        pass
     if chromosome != currentChromosome:
         if summariser != None:
             summariser.Finalise()
