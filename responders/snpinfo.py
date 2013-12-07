@@ -1,10 +1,11 @@
 import B64
 import config
+import DQXUtils
 
 class PositionIndex:
     def __init__(self,datadir,ichromoid):
         self.chromoid=ichromoid
-        print('Loading position index {0} {1}'.format(datadir,self.chromoid))
+        DQXUtils.LogServer('Loading position index {0} {1}'.format(datadir,self.chromoid))
         f=open(datadir+'/'+self.chromoid+'_pos.txt')
         self.posits=[int(x) for x in f.readlines()]
         #check that they are in order
@@ -113,6 +114,6 @@ def response(returndata):
     returndata['seqvals']={seqid:(''.join(passedSeqVals[seqid])) for seqid in passedSeqVals}
 
 
-    print('Serving {0} snps, idx={4}-{5} in range {1}-{2} (size {3})'.format(len(passedPosits),startps,endps,endps-startps,idx1,idx2))
+    DQXUtils.LogServer('Serving {0} snps, idx={4}-{5} in range {1}-{2} (size {3})'.format(len(passedPosits),startps,endps,endps-startps,idx1,idx2))
 
     return returndata

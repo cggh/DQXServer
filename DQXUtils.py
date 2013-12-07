@@ -2,6 +2,11 @@ import time
 import os
 import re
 
+
+def LogServer(line):
+    print('@@@'+line)
+
+
 class Timer:
     def __init__(self):
         self.t0=time.time()

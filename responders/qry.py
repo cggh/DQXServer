@@ -1,6 +1,6 @@
 import B64
 import DQXDbTools
-
+import DQXUtils
 
 
 def response(returndata):
@@ -9,7 +9,7 @@ def response(returndata):
     mytablename=DQXDbTools.ToSafeIdentifier(returndata['tbname'])
     encodedquery=returndata['qry']
     myorderfield=DQXDbTools.ToSafeIdentifier(returndata['order'])
-    print('###orderfield: '+myorderfield)
+    # DQXUtils.LogServer('orderfield: '+myorderfield)
 
     mycolumns=DQXDbTools.ParseColumnEncoding(returndata['collist'])#!!!todo: verify that these column names are actual table columns
 
@@ -36,7 +36,7 @@ def response(returndata):
     if len(myorderfield)>0:
         sqlquery += " ORDER BY {0}".format(myorderfield)
 
-    print('>>>>>>QRY='+sqlquery)
+    # DQXUtils.LogServer('QRY='+sqlquery)
     cur.execute(sqlquery, whc.queryparams)
 
     returndata['DataType']='Points'
