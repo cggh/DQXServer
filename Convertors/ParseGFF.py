@@ -227,7 +227,7 @@ class GFFParser:
 basepath = '.'
 
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
-if True:
+if False:
     basepath = '/home/pvaut/Documents/Genome/PfPopgen30'
     sys.argv = ['', 'PlasmoDB-9.0_Pfalciparum3D7.gff']
 #============= END OF FAKE STUFF ============================================

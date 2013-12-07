@@ -1,4 +1,11 @@
 import time
+import os
+import re
+
+
+def LogServer(line):
+    print('@@@'+line)
+
 
 class Timer:
     def __init__(self):
@@ -8,3 +15,14 @@ class Timer:
         return time.time()-self.t0
     def ElapsedCPU(self):
         return time.clock()-self.t1
+
+
+def GetDQXServerPath():
+    return os.path.dirname(os.path.realpath(__file__))
+
+
+identifierMatcher = re.compile(r"^[^\d\W]\w*\Z")
+
+def CheckValidIdentifier(id):
+    if re.match(identifierMatcher, id) is None:
+        raise Exception('Invalid identifier: '+id)

@@ -19,7 +19,7 @@ sourcefilename = sys.argv[1]
 
 blockSizeStart = 1
 blockSizeIncrFactor = 2
-blockSizeMax = 10000
+blockSizeMax = 40000
 
 
 

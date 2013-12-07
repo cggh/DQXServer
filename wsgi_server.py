@@ -10,13 +10,12 @@ from responders import uploadfile
 
 
 
-
 def application(environ, start_response):
     returndata = dict((k,v[0]) for k,v in parse_qs(environ['QUERY_STRING']).items())
     #print('REQUEST: '+str(environ))
 
     if 'datatype' not in returndata:
-        print('--> request does not contain datatype')
+        DQXUtils.LogServer('--> request does not contain datatype')
         status = '404 NOT FOUND'
         response=''
         response_headers = [('Content-type', 'application/json'),
@@ -32,7 +31,10 @@ def application(environ, start_response):
     if request_type == 'custom':
         request_custommodule = returndata['respmodule']
         request_customid = returndata['respid']
-        responder = importlib.import_module('customresponders.' + request_custommodule + '.' + request_customid)
+        try:
+            responder = importlib.import_module('customresponders.' + request_custommodule + '.' + request_customid)
+        except ImportError:
+            raise Exception("Unknown custom module {0}.{1}".format(request_custommodule, request_customid))
     else:
         try:
             #Fetch the handler by request type, using some introspection magic in responders/__init__.py
@@ -59,4 +61,4 @@ def application(environ, start_response):
         start_response(status, response_headers)
         yield response
 
-    print('@@@@ Responded to {0} in wall={1}s cpu={2}s'.format(request_type, tm.Elapsed(),tm.ElapsedCPU()))
+    DQXUtils.LogServer('Responded to {0} in wall={1}s cpu={2}s'.format(request_type, tm.Elapsed(),tm.ElapsedCPU()))

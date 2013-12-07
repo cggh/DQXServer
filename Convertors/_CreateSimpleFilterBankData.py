@@ -2,6 +2,7 @@ import math
 import os
 import simplejson
 import sys
+import math
 
 import DQXEncoder
 
@@ -84,9 +85,9 @@ class Summariser:
         else:
             level.sum /= level.count
         level.outputfile.write('{0}{1}{2}'.format(
-            self.encoder.perform(level.sum),
-            self.encoder.perform(level.min),
-            self.encoder.perform(level.max)
+            self.encoder.perform(min(level.sum, maxval)),
+            self.encoder.perform(min(level.min, maxval)),
+            self.encoder.perform(min(level.max, maxval))
         ))
 
 
@@ -186,7 +187,11 @@ while True:
     comps = line.split('\t')
     chromosome = comps[0]
     pos = int(comps[1])
-    val = float(comps[2])
+    val = None
+    try:
+        val = float(comps[2])
+    except:
+        pass
     if chromosome != currentChromosome:
         if summariser != None:
             summariser.Finalise()

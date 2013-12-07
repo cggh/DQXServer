@@ -1,5 +1,6 @@
 import B64
 import DQXDbTools
+import DQXUtils
 import config
 
 #Return annotation information for a chromosome region
@@ -26,7 +27,7 @@ def response(returndata):
         stop=str(int(returndata['stop']))
     )
 
-    print(statement+'\n')
+    # DQXUtils.LogServer(statement+'\n')
 
     cur.execute(statement)
     starts=[]

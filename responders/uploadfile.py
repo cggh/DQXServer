@@ -3,6 +3,7 @@ import os
 import sys
 import config
 import uuid
+import DQXUtils
 
 
 def response(returndata):
@@ -22,10 +23,10 @@ def response(returndata):
             readsize += blocksize
 
     if filename:
-        print('Uploaded file '+filename)
+        DQXUtils.LogServer('Uploaded file '+filename)
         returndata['filename'] = filename
     else:
-        print('Failed to upload file')
+        DQXUtils.LogServer('Failed to upload file')
         returndata['Error'] = 'Failed'
 
 
