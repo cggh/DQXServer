@@ -182,7 +182,7 @@ while True:
         break
     else:
         linecount += 1
-        if linecount % 100000 ==0:
+        if linecount % 500000 ==0:
             print(str(linecount))
     comps = line.split('\t')
     chromosome = comps[0]

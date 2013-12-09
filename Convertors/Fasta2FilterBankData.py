@@ -138,7 +138,7 @@ while True:
     else:
         for base in line:
             basect += 1
-            if basect % 100000 == 0:
+            if basect % 500000 == 0:
                 print(str(basect))
             summariser.Add(base.upper())
 
