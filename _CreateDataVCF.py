@@ -18,10 +18,10 @@ sourcedir='.'
 #"test"
 
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
-#sys.argv=['','3d7_hb3.gatk.both.final','GATKCrosses']
+#sys.argv=['','3d7_hb3.gatk.final','GATKCrosses']
 sys.argv=['','3d7_hb3.cortex.final','CORTEXCrosses']
 #sys.argv=['','hb3_dd2.cortex.final','CORTEXCrosses']
-sourcedir='/home/pvaut/Documents/Genome/SnpDataCrossFinal'
+sourcedir='/home/pvaut/Documents/Genome/SnpDataCross3'
 #============= END OF FAKE STUFF ============================================
 
 if len(sys.argv)<2:
@@ -249,7 +249,8 @@ class DataProvider_VCF:
                             try:
                                 vl=infodict[infocomp['fieldKey']][infocomp['keyIndex']]
                             except (KeyError,IndexError):
-                                raise Exception('Missing info component {0}:{1} for line {2}.\nDATA: {3}'.format(infocomp['fieldKey'],infocomp['keyIndex'],self.lineNr,str(infodict)))
+                                vl = None
+                                print('Missing info component {0}:{1} for line {2}.\nDATA: {3}'.format(infocomp['fieldKey'],infocomp['keyIndex'],self.lineNr,str(infodict)))
                         if 'Categories' in infocomp:
                             if vl in infocomp['Categories']:
                                 vl=infocomp['Categories'][vl]
@@ -470,6 +471,8 @@ for rw in sourceFile.GetRowIterator():
         of=GetWriteFile(chromname,sid)
         for samplecomp in settings['SampleComps']:
             vl=rw[sid+'_'+samplecomp['ID']]
+            if vl == './.':
+                vl = None
             st=samplecomp['theEncoder'].perform(vl)
             if len(st)!=samplecomp['theEncoder'].getlength():
                 raise Exception('Invalid encoded length: samplecomp={0} | encoded={1} | expected length={2} | val={3}'.format(samplecomp['ID'],st,samplecomp['theEncoder'].getlength(),vl))
