@@ -41,7 +41,7 @@ class Summariser:
             level['outputfile'] = open(self.outputFolder+'/Summ_'+self.chromosome+'_'+str(blocksize), 'w')
             self.levels.append(level)
             blocksize *= self.blockSizeIncrFactor
-        print(str(self.levels))
+        # print(str(self.levels))
         self.pos = 0
 
 
