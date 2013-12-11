@@ -95,6 +95,7 @@ class DataProvider_VCF:
 
         #parse header line
         line=line[1:]
+        self.headerLine = line
         headercomps=line.split('\t')
         self.colnr_chrom=-1
         self.colnr_pos=-1
@@ -268,6 +269,10 @@ sourceFileName='{0}/{1}.vcf'.format(sourcedir,dataSource)
 
 sourceFile=DataProvider_VCF(sourceFileName,settings)
 
+headerFileName='{0}/{1}.header.txt'.format(sourcedir,dataSource)
+hfp = open(headerFileName, 'w')
+hfp.write(sourceFile.headerLine+'\n')
+hfp.close()
 
 
 print('=============== Report Snp Position Information components ============')
