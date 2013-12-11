@@ -18,10 +18,15 @@ sourcedir='.'
 #"svar1"
 #"test"
 
+ExpNames = ["3d7_hb3", "7g8_gb4", "hb3_dd2"]
+Methods = ['gatk', 'cortex']
+
+ExpName = ExpNames[2]
+Method = Methods[1]
+
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
-sys.argv=['','3d7_hb3.gatk.final','GATKCrosses_Table']
-#sys.argv=['','3d7_hb3.cortex.final','CORTEXCrossesInfo']
-#sys.argv=['','hb3_dd2.cortex.final','CORTEXCrossesInfo']
+sys.argv=['',ExpName+'.'+Method+'.final', Method.upper() + 'Crosses_Table']
+
 sourcedir='/home/pvaut/Documents/Genome/SnpDataCross3'
 #============= END OF FAKE STUFF ============================================
 
@@ -158,7 +163,7 @@ class DataProvider_VCF:
                 raise Exception('Tag "{0}" not present in settings file'.format(requiredTag))
 
         #Check presence of required tags for the per-position SNP component
-        for requiredTag in ['ID','Source']:
+        for requiredTag in ['ID','Source', 'Type']:
             for comp in settings['InfoComps']:
                 if requiredTag not in comp:
                     raise Exception('Tag "{0}" not present in SampleComponent {1}'.format(requiredTag,str(comp)))
@@ -249,30 +254,6 @@ class DataProvider_VCF:
 
 
 
-lastchr='---'
-files={}
-def GetWriteFile(chrom,id):
-    global lastchr
-    if lastchr!=chrom:
-        for fname in files:
-            if fname.startswith(lastchr):
-                files[fname].close()
-        lastchr=chrom
-    fid=chrom+'_'+id
-    if not(fid in files):
-        files[fid]=open('{0}/{1}/{2}.txt'.format(sourcedir,dataDest,fid),'w')
-    return files[fid]
-
-
-
-#Create output directory
-outputdir=sourcedir+'/'+dataDest
-if not os.path.exists(outputdir):
-    os.makedirs(outputdir)
-#remove all output files that correspond to this configuration
-for flename in os.listdir(outputdir):
-    os.remove(os.path.join(outputdir,flename))
-
 
 #Load settings
 settingsFile=open('{0}/{1}.cnf'.format(sourcedir,configSource))
@@ -312,8 +293,11 @@ for infocomp in settings['InfoComps']:
     infocompinfo.append(infoinfo)
 
 
-ofile.write('ExpName\t')
-ofile.write('\t'.join([comp['ID'] for comp in settings['InfoComps']])+'\n')
+ofile.write('ExpName\tMethod\t')
+ofile.write('\t'.join([comp['ID'] for comp in settings['InfoComps']]))
+ofile.write('\t')
+ofile.write('\t'.join(sourceFile.filterList))
+ofile.write('\n')
 
 limitcount=None
 if ('LimitCount' in settings):
@@ -335,17 +319,9 @@ for rw in sourceFile.GetRowIterator():
             chromname='Pf3D7_'+chromname
 
     if ('ConvertChromoNamesV32Pf3D7' in settings) and (settings['ConvertChromoNamesV32Pf3D7']):
-        chromname=chromname.replace('_v3','')
+        chromname=chromname.replace('_v3', '')
 
 
-    GetWriteFile(chromname,'pos').write('{0}\n'.format(rw['pos']))
-
-
-    #Write SNP info data
-    of=GetWriteFile(chromname,'snpinfo')
-
-    #Write Filter flags
-    of.write(b64.BooleanList2B64(rw['filter']))
 
 #Write SNP info components
     line = []
@@ -361,8 +337,14 @@ for rw in sourceFile.GetRowIterator():
             if vl == '':
                 vl = infocomp['Default']
         line.append(str(vl))
-    ofile.write(settings['Name']+'\t')
-    ofile.write('\t'.join(line)+'\n')
+    ofile.write(ExpName+'\t')
+    ofile.write(Method+'\t')
+    ofile.write('\t'.join(line))
+    ofile.write('\t')
+    ofile.write('\t'.join([str(int(state)) for state in rw['filter']]))
+    ofile.write('\n')
+
+
 
 
     nr+=1
@@ -380,4 +362,13 @@ ofile.close()
 tb = VTTable.VTTable()
 tb.allColumnsText = True
 tb.LoadFile(ofilename)
+for comp in settings['InfoComps']:
+    if (comp['Type'] == 'Float') or (comp['Type'] == 'Int'):
+        tb.ConvertColToValue(comp['ID'])
+for filter in sourceFile.filterList:
+    tb.ConvertColToValue(filter)
 tb.PrintRows(0,20)
+
+ofilename = "{0}_{1}".format(ExpName, Method)
+tb.SaveSQLCreation('{0}/{1}_create.sql'.format(sourcedir, ofilename), 'variants3')
+tb.SaveSQLDump('{0}/{1}_dump.sql'.format(sourcedir, ofilename), 'variants3')
