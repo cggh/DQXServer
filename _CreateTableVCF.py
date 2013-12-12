@@ -21,8 +21,8 @@ sourcedir='.'
 ExpNames = ["3d7_hb3", "7g8_gb4", "hb3_dd2"]
 Methods = ['gatk', 'cortex']
 
-ExpName = ExpNames[2]
-Method = Methods[1]
+ExpName = ExpNames[1]
+Method = Methods[0]
 
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
 sys.argv=['',ExpName+'.'+Method+'.final', Method.upper() + 'Crosses_Table']
@@ -298,7 +298,7 @@ for infocomp in settings['InfoComps']:
     infocompinfo.append(infoinfo)
 
 
-ofile.write('ExpName\tMethod\t')
+ofile.write('ExpName\tMethod\tSnpId\tID\t')
 ofile.write('\t'.join([comp['ID'] for comp in settings['InfoComps']]))
 ofile.write('\t')
 ofile.write('\t'.join(sourceFile.filterList))
@@ -344,6 +344,8 @@ for rw in sourceFile.GetRowIterator():
         line.append(str(vl))
     ofile.write(ExpName+'\t')
     ofile.write(Method+'\t')
+    ofile.write(rw['chrom']+':'+rw['pos']+'\t')
+    ofile.write(str(nr)+'\t')
     ofile.write('\t'.join(line))
     ofile.write('\t')
     ofile.write('\t'.join([str(int(state)) for state in rw['filter']]))

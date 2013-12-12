@@ -201,7 +201,7 @@ class DataProvider_VCF:
             inputfile.readline()
 
         while True:
-            line=inputfile.readline().rstrip('\n')
+            line=inputfile.readline().rstrip('\r\n')
             if not(line):
                 break
             self.lineNr+=1
