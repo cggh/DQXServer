@@ -114,6 +114,8 @@ class EncoderLimitString(Encoder):
         self.len=info['Len']
     def perform(self,inp):
         st=inp
+        if st == None:
+            st = ''
         if len(st)>self.len:
             st=st[:self.len-1]+'>'
         while len(st)<self.len:
