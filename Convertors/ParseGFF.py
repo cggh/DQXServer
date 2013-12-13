@@ -3,7 +3,7 @@ import sys
 
 class GFFParser:
     def __init__(self):
-        self.targetfeaturelist=['gene']
+        self.targetfeaturelist=['gene', 'pseudogene']
         self.features=[]
         self.exonid='CDS'
 
@@ -18,57 +18,58 @@ class GFFParser:
         #print(idx)
         return self.features[idx]
 
-    def parseGTF(self,filelist):
-        #read the feature list
-        self.features=[]
-        self.featindex={}
-        for filename in filelist:
-            print('processing file '+filename)
-            f=open(filename,'r')
-            for line in f.readlines():
-#                if len(self.features)>20000: break#!!!
-                line=line.rstrip('\n')
-                if line[0]!='#':
-                    parts=line.split('\t')
-                    feattype=parts[2]
-                    if (feattype=='CDS') or (feattype==self.exonid):
-                        if len(self.features)%1000==0: print('read: '+str(len(self.features)))
-                        feat={}
-                        feat['nr']=len(self.features)
-                        feat['children']=[]
-                        feat['seqid']='chr'+parts[0]
-                        feat['type']=feattype
-                        feat['start']=int(parts[3])
-                        feat['end']=int(parts[4])
-                        attribs=parts[8].split(';')
-                        feat['id']=''
-                        feat['parentid']=''
-                        feat['name']=''
-                        for attribstr in attribs:
-                            attribstr=attribstr.lstrip()
-                            attribstr=attribstr.rstrip()
-                            #                            prt=attribstr.partition(' "')
-                            key,sp,value=attribstr.partition(' "')
-                            value=value[:-1]
-                            if feattype == 'CDS':
-                                if key == 'gene_id':
-                                    feat['id'] = value
-                                if key == 'gene_name':
-                                    feat['name'] += ' '+value
-                                if key == 'description':
-                                    feat['name'] += ' '+value
-                                if key == 'Alias':
-                                    print('alias: '+value)
-                                feat['type'] = 'gene'
-                            else:
-                                if key == 'gene_id':
-                                    feat['parentid'] = value
-                        self.features.append(feat)
-            f.close()
+#     def parseGTF(self,filelist):
+#         #read the feature list
+#         self.features=[]
+#         self.featindex={}
+#         for filename in filelist:
+#             print('processing file '+filename)
+#             f=open(filename,'r')
+#             for line in f.readlines():
+# #                if len(self.features)>20000: break#!!!
+#                 line=line.rstrip('\n')
+#                 if line[0]!='#':
+#                     parts=line.split('\t')
+#                     feattype=parts[2]
+#                     if (feattype=='CDS') or (feattype==self.exonid):
+#                         if len(self.features)%1000==0: print('read: '+str(len(self.features)))
+#                         feat={}
+#                         feat['nr']=len(self.features)
+#                         feat['children']=[]
+#                         feat['seqid']='chr'+parts[0]
+#                         feat['type']=feattype
+#                         feat['start']=int(parts[3])
+#                         feat['end']=int(parts[4])
+#                         attribs=parts[8].split(';')
+#                         feat['id']=''
+#                         feat['parentid']=''
+#                         feat['name']=''
+#                         for attribstr in attribs:
+#                             attribstr=attribstr.lstrip()
+#                             attribstr=attribstr.rstrip()
+#                             #                            prt=attribstr.partition(' "')
+#                             key,sp,value=attribstr.partition(' "')
+#                             value=value[:-1]
+#                             if feattype == 'CDS':
+#                                 if key == 'gene_id':
+#                                     feat['id'] = value
+#                                 if key == 'gene_name':
+#                                     feat['name'] += ' '+value
+#                                 if key == 'description':
+#                                     feat['name'] += ' '+value
+#                                 if key == 'Alias':
+#                                     print('alias: '+value)
+#                                 feat['type'] = 'gene'
+#                             else:
+#                                 if key == 'gene_id':
+#                                     feat['parentid'] = value
+#                         self.features.append(feat)
+#             f.close()
 
     def parseGFF(self,filelist):
         #read the feature list
         self.features=[]
+        tokenMap = {}
         for filename in filelist:
             print('processing file '+filename)
             annotationreading=False
@@ -94,10 +95,11 @@ class GFFParser:
                     feat['parentid']=''
                     feat['name'] = ''
                     feat['names'] = ''
-                    feat['description'] = ''
+                    feat['descr'] = feat['type']
                     for attribstr in attribs:
                         if '=' in attribstr:
-                            key,value=attribstr.split('=')
+                            key, value = attribstr.split('=')
+                            tokenMap[key] = ''
                             if key == 'ID':
                                 feat['id'] = value
                             if key == 'Parent':
@@ -111,12 +113,17 @@ class GFFParser:
                                 if len(feat['names']) > 0:
                                     feat['names'] +=','
                                 feat['names'] += value
+                            if key =='previous_systematic_id':
+                                if len(feat['names']) > 0:
+                                    feat['names'] +=','
+                                feat['names'] += value
                     if len(feat['names']) > 200:
                         feat['names'] = feat['names'][0:195]+'...'
                     if len(feat['descr']) > 200:
                         feat['descr'] = feat['descr'][0:195]+'...'
                     self.features.append(feat)
             f.close()
+            print('Tokens found: ' + ','.join([key for key in tokenMap]))
 
     def Process(self):
 
@@ -227,9 +234,9 @@ class GFFParser:
 basepath = '.'
 
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
-if False:
-    basepath = '/home/pvaut/Documents/Genome/PfPopgen30'
-    sys.argv = ['', 'PlasmoDB-9.0_Pfalciparum3D7.gff']
+if True:
+    basepath = '/home/pvaut/Documents/Genome/SourceData/datasets/PfCrosses/refgenome'
+    sys.argv = ['', 'annotation.gff']
 #============= END OF FAKE STUFF ============================================
 
 

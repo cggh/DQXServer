@@ -15,8 +15,8 @@ def response(returndata):
     tablename=DQXDbTools.ToSafeIdentifier(returndata['table'])
 
     typequerystring='(true)'
-    if len(returndata['ftype'])>0:
-        typequerystring='(ftype="{0}")'.format(returndata['ftype'])
+    if ('ftype' in returndata) and (len(returndata['ftype']) > 0):
+        typequerystring = ' OR '.join(['(ftype="{0}")'.format(item) for item in returndata['ftype'].split(',')])
     if returndata['subfeatures']=='1':
         typequerystring+=' or (ftype="{1}")'.format(returndata['ftype'],returndata['fsubtype'])
     statement='SELECT fstart, fstop, fname, fid, ftype, fparentid FROM {tablename} WHERE ({typequery}) and (chromid="{chromid}") and (fstop>={start}) and (fstart<={stop}) ORDER BY fstart'.format(
