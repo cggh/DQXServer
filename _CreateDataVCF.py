@@ -412,7 +412,7 @@ ofile.write('SampleCallFields='+simplejson.dumps(infosampleinfo)+'\n')
 
 ofile.write('Filters='+'\t'.join(sourceFile.filterList)+'\n')
 if len(sourceFile.parents)>0:
-    ofile.write('Parents='+('\t'.join(sourceFile.parents)).replace('/','__')+'\n')
+    ofile.write('Parents='+('\t'.join(sourceFile.parents)).replace('/','__').replace(',','\t')+'\n')
 ofile.close()
 
 limitcount=None
