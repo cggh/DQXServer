@@ -19,9 +19,9 @@ sourcedir='.'
 
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
 #sys.argv=['','3d7_hb3.gatk.final','GATKCrosses']
-sys.argv=['','3d7_hb3.cortex.final','CORTEXCrosses']
+#sys.argv=['','3d7_hb3.cortex.final','CORTEXCrosses']
 #sys.argv=['','hb3_dd2.cortex.final','CORTEXCrosses']
-sourcedir='/home/pvaut/Documents/Genome/SnpDataCross3'
+#sourcedir='/home/pvaut/Documents/Genome/SnpDataCross3'
 #============= END OF FAKE STUFF ============================================
 
 if len(sys.argv)<2:
