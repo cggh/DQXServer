@@ -233,6 +233,10 @@ class DataProvider_VCF:
                         if '=' in comp:
                             key,val=comp.split('=')
                             infodict[key]=val.split(',')
+                            if key == 'EFF':
+                                part1, part2 = val.split(',')[0][:-2].split('(')
+                                infodict[key] = part2.split('|')
+                                infodict[key].insert(0, part1)
                         else:
                             infodict[comp]=[1]
 
@@ -408,7 +412,7 @@ ofile.write('SampleCallFields='+simplejson.dumps(infosampleinfo)+'\n')
 
 ofile.write('Filters='+'\t'.join(sourceFile.filterList)+'\n')
 if len(sourceFile.parents)>0:
-    ofile.write('Parents='+'\t'.join(sourceFile.parents)+'\n')
+    ofile.write('Parents='+('\t'.join(sourceFile.parents)).replace('/','__')'\n')
 ofile.close()
 
 limitcount=None

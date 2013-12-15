@@ -212,7 +212,6 @@ class DataProvider_VCF:
                                 part1, part2 = val.split(',')[0][:-2].split('(')
                                 infodict[key] = part2.split('|')
                                 infodict[key].insert(0, part1)
-                                pass
                         else:
                             infodict[comp]=[1]
 
