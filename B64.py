@@ -135,4 +135,6 @@ class ValueListCoder:
             return self.EncodeFloatsByIntB64(vals,2)
         if methodid=='F3':
             return self.EncodeFloatsByIntB64(vals,3)
+        if methodid=='F4':
+            return self.EncodeFloatsByIntB64(vals,4)
         raise Exception('Invalid column encoding identifier {0}'.format(methodid))
