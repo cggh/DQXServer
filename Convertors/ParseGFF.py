@@ -234,7 +234,7 @@ class GFFParser:
 basepath = '.'
 
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
-if True:
+if False:
     basepath = '/home/pvaut/Documents/Genome/SourceData/datasets/PfCrosses/refgenome'
     sys.argv = ['', 'annotation.gff']
 #============= END OF FAKE STUFF ============================================
