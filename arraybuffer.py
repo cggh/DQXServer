@@ -5,12 +5,15 @@ import struct
 NATIVE_ENDIAN = '<' if (np.dtype("<i").byteorder == '=') else '>'
 
 def strict_dtype_string(dtype):
-	if not dtype.isnative:
-		raise Exception("Only native, non composite dtypes currently supported")
-	byte_order = dtype.byteorder
-	if byte_order == '=':
-		byte_order = NATIVE_ENDIAN
-	return byte_order + dtype.char
+	if not dtype.isbuiltin:
+		raise Exception("Only scalar builtin dtypes (ie not structured with fields or user-defined) currently supported")
+#Old method commented out as length is platform dependant
+#	byte_order = dtype.byteorder
+#	if byte_order == '=':
+#		byte_order = NATIVE_ENDIAN
+#	return byte_order + dtype.char
+	#New method gives explicit num bytes and endianness
+	return dtype.str
 
 
 def encode_array(array, dtype=None):
@@ -24,7 +27,9 @@ def encode_array(array, dtype=None):
 	- First two bytes are 'AB'
 	- A /0 terminated cstyle string which is a valid numpy dtype, but which always includes the
 	  endianness as first char. '<' little-endian, '>' big-endian, '|'not applicable.
-	- Four-byte unsigned little endian buffer size
+	- 1-byte unsigned little endian number of dimensions = D
+ 	- D x 4-byte unsigned little endians dimension sizes
+	- 4-byte unsigned little endian buffer size (equal to the product of dimension sizes and byte length of dtype)
 	- The buffer itself.
 
 	"""
@@ -42,6 +47,9 @@ def encode_array(array, dtype=None):
 	for char in strict_dtype_string(dtype):
 		yield char
 	yield chr(0)
+	yield struct.pack('<B', len(array.shape))
+	for dim in array.shape:
+		yield struct.pack('<L', dim)
 	yield struct.pack('<L', len(array.data))
 	for byte in array.data:
 		yield byte
