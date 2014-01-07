@@ -177,6 +177,9 @@ class DataProperty:
 
 
 def ReadJsonFile(filename):
+    if not os.path.isfile(filename):
+        print('ERROR: MISSING FILE '+filename)
+        return None
     f = open(filename, 'r')
     body=''
     for line in f.readlines():
@@ -231,6 +234,11 @@ class Creator:
         self.datadir=self.basedir+'/'+self.folder
         print('Initialising Creator, directory="{0}", config="{1}"'.format(self.datadir,self.config))
         configdata=ReadJsonFile(self.datadir+'/'+self.config+".cnf")
+        if configdata is None:
+            self.present = False
+            return
+        else:
+            self.present = True
 
         if 'SourceFilePattern' in configdata:
             self.SourceFilePattern=configdata['SourceFilePattern']
@@ -336,15 +344,22 @@ class Creator:
 
 
     def GetData(self,dataid,blockSize,start,length,summarylist):
+        result = {}
+        for summid in summarylist:
+            result[self.folder+'_'+self.config+'_'+summid] = None
+        if not self.present:
+            return result
         outputbasefilename=self.datadir+'/Summaries/'+self.config+'_'+dataid
         filename=outputbasefilename+'_'+str(blockSize)
         #print('Fetching from '+filename)
+        if not os.path.isfile(filename):
+            print('ERROR: MISSING FILE '+filename)
+            return result
         f=open(filename,'r')
         f.seek(start*self.encodedRowSize)
         linelength=self.encodedRowSize
         strblock=f.read(length*linelength)
         f.close()
-        result={}
         for summid in summarylist:
             nr=self.getSummariserNr(summid)
             strrs=''
