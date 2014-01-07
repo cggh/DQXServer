@@ -4,7 +4,7 @@ import struct
 
 NATIVE_ENDIAN = '<' if (np.dtype("<i").byteorder == '=') else '>'
 
-def strict_dtype_string(dtype):
+def _strict_dtype_string(dtype):
 	if not dtype.isnative:
 		raise Exception("Only native, non composite dtypes currently supported")
 	byte_order = dtype.byteorder
@@ -12,6 +12,15 @@ def strict_dtype_string(dtype):
 		byte_order = NATIVE_ENDIAN
 	return byte_order + dtype.char
 
+def _encode_numpy_array(array):
+	yield 'A'
+	yield 'B'
+	for char in _strict_dtype_string(array.dtype):
+		yield char
+	yield chr(0)
+	yield struct.pack('<L', len(array.data))
+	for byte in array.data:
+		yield byte
 
 def encode_array(array, dtype=None):
 	"""Encode an array for a JS arraybuffer
@@ -34,17 +43,8 @@ def encode_array(array, dtype=None):
 	except AttributeError:
 		raise Exception("Non-numpy array passed, but with no numpy dtype to convert to")
 	dtype = np.dtype(dtype)
-	dtype_string = strict_dtype_string(dtype)
-	array = np.asarray(array, dtype)
+	return _encode_numpy_array(np.asarray(array, dtype))
 	
-	yield 'A'
-	yield 'B'
-	for char in strict_dtype_string(dtype):
-		yield char
-	yield chr(0)
-	yield struct.pack('<L', len(array.data))
-	for byte in array.data:
-		yield byte
 	
 	
 	
