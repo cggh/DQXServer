@@ -18,7 +18,7 @@ def _strict_dtype_string(dtype):
 def _encode_numpy_array(array):
 	yield 'A'
 	yield 'B'
-	for char in _strict_dtype_string(dtype):
+	for char in _strict_dtype_string(array.dtype):
 		yield char
 	yield chr(0)
 	yield struct.pack('<B', len(array.shape))
