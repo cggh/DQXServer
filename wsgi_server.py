@@ -11,9 +11,13 @@ from responders import uploadfile
 
 
 def application(environ, start_response):
+    if environ['PATH_INFO'] == '/favicon.ico':
+        DQXUtils.LogServer('404 for favicon')
+        status = '404'
+        start_response(status, [])
+        yield ''
+        return
     returndata = dict((k,v[0]) for k,v in parse_qs(environ['QUERY_STRING']).items())
-    #print('REQUEST: '+str(environ))
-
     if 'datatype' not in returndata:
         DQXUtils.LogServer('--> request does not contain datatype')
         status = '404 NOT FOUND'
