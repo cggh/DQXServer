@@ -8,7 +8,7 @@ import DQXEncoder
 import os
 import re
 import shlex
-import customresponders.uploadtracks.VTTable as VTTable
+from DQXTableUtils import VTTable
 
 sourcedir='.'
 
