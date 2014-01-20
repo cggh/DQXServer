@@ -15,6 +15,7 @@ def OpenNoDatabase():
 
 
 def ToSafeIdentifier(st):
+    st=str(st)
     removelist=['"',"'",';','(',')']
     for it in removelist:
         st=st.replace(it,"")
