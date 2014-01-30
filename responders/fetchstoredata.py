@@ -5,7 +5,7 @@ import uuid
 def response(returndata):
 
     id = returndata['id']
-    db = DQXDbTools.OpenDatabase()
+    db = DQXDbTools.OpenDatabase(DQXDbTools.ParseCredentialInfo(returndata))
     cur = db.cursor()
     sqlstring = 'SELECT content FROM storage WHERE id="{0}"'.format(id)
     cur.execute(sqlstring)

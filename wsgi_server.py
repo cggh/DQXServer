@@ -3,6 +3,7 @@ import importlib
 import simplejson
 
 import DQXUtils
+import DQXDbTools
 import responders
 from responders import uploadfile
 
@@ -45,7 +46,12 @@ def application(environ, start_response):
 
 
     returndata['environ'] = environ
-    response = responder.response(returndata)
+    try:
+        response = responder.response(returndata)
+    except DQXDbTools.CredentialException as e:
+        print('CREDENTIAL EXCEPTION: '+str(e))
+        response = returndata
+        response['Error'] = 'Credential problem: ' + str(e)
 
     #Check for a custom response (eg in downloadtable)
     if 'handler' in dir(responder):

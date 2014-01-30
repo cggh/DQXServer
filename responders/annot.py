@@ -9,7 +9,7 @@ def response(returndata):
     databaseName=None
     if 'database' in returndata:
         databaseName = returndata['database']
-    db = DQXDbTools.OpenDatabase(databaseName)
+    db = DQXDbTools.OpenDatabase(DQXDbTools.ParseCredentialInfo(returndata), databaseName)
     cur = db.cursor()
 
     tablename=DQXDbTools.ToSafeIdentifier(returndata['table'])

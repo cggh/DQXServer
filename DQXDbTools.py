@@ -4,21 +4,85 @@ import base64
 import MySQLdb
 import config
 
-def OpenDatabase(database=None):
-    #todo: maintain a list of allowed databases and check against this?
-    if database is None:
-        database =  config.DB
+
+class CredentialException(Exception):
+    def __init__(self, message):
+        Exception.__init__(self, message)
+
+class CredentialReadDatabaseException(CredentialException):
+    def __init__(self, databaseName, tableName=None, columnName=None):
+        str = "Insufficient privileges to perform this action. [Read:" + databaseName
+        if tableName:
+            str += ',' + tableName
+        if columnName:
+            str += ',' + columnName
+        str +=']'
+        CredentialException.__init__(self, str)
+
+class CredentialModifyDatabaseException(CredentialException):
+    def __init__(self, databaseName, tableName=None, columnName=None):
+        str = "Insufficient privileges to perform this action. [Modify:" + databaseName
+        if tableName:
+            str += ',' + tableName
+        if columnName:
+            str += ',' + columnName
+        str +=']'
+        CredentialException.__init__(self, str)
+
+class CredentialInformation:
+    def __init__(self):
+        pass
+
+    def ParseFromReturnData(self, returndata):
+        if 'environ' not in returndata:
+            raise Exception('Data does not contain environment information')
+
+    def CanReadDatabase(self, databaseName, tableName=None, columnName=None):
+        if (databaseName is None) or (databaseName == ''):
+            databaseName = config.DB
+        # !!! todo: implement
+        # if databaseName == 'datasetindex':
+        #     return True
+        # if databaseName == 'Geographic':
+        #     return True
+        return True
+
+    def CanModifyDatabase(self, databaseName, tableName=None, columnName=None):
+        if (databaseName is None) or (databaseName == ''):
+            databaseName = config.DB
+        # !!! todo: implement
+        return True
+
+    def VerifyCanReadDatabase(self, databaseName, tableName=None, columnName=None):
+        if not(self.CanReadDatabase(databaseName)):
+            raise CredentialReadDatabaseException(databaseName, tableName, columnName)
+
+    def VerifyCanModifyDatabase(self, databaseName, tableName=None, columnName=None):
+        if not(self.CanModifyDatabase(databaseName)):
+            raise CredentialModifyDatabaseException(databaseName, tableName, columnName)
+
+
+
+def ParseCredentialInfo(returndata):
+    cred = CredentialInformation()
+    cred.ParseFromReturnData(returndata)
+    return cred
+
+def OpenDatabase(credInfo, database=None):
+    if (database is None) or (database == ''):
+        database = config.DB
+    credInfo.VerifyCanReadDatabase(database)
     return MySQLdb.connect(host=config.DBSRV, user=config.DBUSER, passwd=config.DBPASS, db=database, charset='utf8')
 
-def OpenNoDatabase():
+def OpenNoDatabase(credInfo):
     return MySQLdb.connect(host=config.DBSRV, user=config.DBUSER, passwd=config.DBPASS, charset='utf8')
 
 
 def ToSafeIdentifier(st):
-    st=str(st)
-    removelist=['"',"'",';','(',')']
+    st = str(st)
+    removelist=['"', "'", ';', '(', ')']
     for it in removelist:
-        st=st.replace(it,"")
+        st=st.replace(it, "")
     return st
 
 
