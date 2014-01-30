@@ -1,6 +1,7 @@
 from urlparse import parse_qs
 import importlib
 import simplejson
+import os
 
 import DQXUtils
 import DQXDbTools
@@ -9,6 +10,12 @@ from responders import uploadfile
 
 # import customresponders
 
+# Try to import all custom modules
+customRespondersPath = os.path.join(os.path.dirname(__file__), 'customresponders')
+for dirname in os.listdir(customRespondersPath):
+    tryModulePath = os.path.join(customRespondersPath, dirname)
+    if os.path.isdir(tryModulePath):
+        importlib.import_module('customresponders.' + dirname)
 
 
 def application(environ, start_response):

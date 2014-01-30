@@ -5,6 +5,11 @@ import MySQLdb
 import config
 
 
+class CredentialSettings:
+    @staticmethod
+    def Write_Add(databaseName, tableName, columnName):
+        pass
+
 class CredentialException(Exception):
     def __init__(self, message):
         Exception.__init__(self, message)
