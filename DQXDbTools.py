@@ -22,10 +22,10 @@ class DbOperation:
 
     def __str__(self):
         st = ''
-        if (DbOperationType == DbOperationType.read):
-            st+='Read'
-        if (DbOperationType == DbOperationType.write):
-            st+='Write'
+        if (self.operationType == DbOperationType.read):
+            st += 'Read'
+        if (self.operationType == DbOperationType.write):
+            st += 'Write'
         st += ':'
         st += self.databaseName
         if self.tableName is not None:
@@ -37,12 +37,12 @@ class DbOperation:
 # Encapsulates a read operation that is done on a database entity
 class DbOperationRead(DbOperation):
     def __init__(self, databaseName, tableName=None, columnName=None):
-        DbOperation(DbOperationType.read, databaseName, tableName, columnName)
+        DbOperation.__init__(self, DbOperationType.read, databaseName, tableName, columnName)
 
 # Encapsulates a write operation that is done on a database entity
 class DbOperationWrite(DbOperation):
     def __init__(self, databaseName, tableName=None, columnName=None):
-        DbOperation(DbOperationType.write, databaseName, tableName, columnName)
+        DbOperation.__init__(self, DbOperationType.write, databaseName, tableName, columnName)
 
 # Define a custom credential handler here by defining function taking a DbOperation and a CredentialInformation
 # returning True if granted, false if not
@@ -54,8 +54,8 @@ class CredentialException(Exception):
 
 class CredentialDatabaseException(CredentialException):
     def __init__(self, operation):
-        str = "Insufficient privileges to perform this action. \n[" + str(operation)
-        CredentialException.__init__(self, str)
+        st = "Insufficient privileges to perform this action. \n\n[" + str(operation) + ']'
+        CredentialException.__init__(self, st)
 
 
 
@@ -74,7 +74,7 @@ class CredentialInformation:
             return DbCredentialVerifier(self, operation)
         return True
 
-    # operation is of type DbOperation
+    # operation is of type DbOperation. raises an error of not authorised
     def VerifyCanDo(self, operation):
         if not(self.CanDo(operation)):
             raise CredentialDatabaseException(operation)
