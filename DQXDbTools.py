@@ -4,36 +4,62 @@ import base64
 import MySQLdb
 import config
 
+# Enumerates types of actions that can be done on a database entity
+class DbOperationType:
+    read = 1
+    write = 2
 
-class CredentialSettings:
-    @staticmethod
-    def Write_Add(databaseName, tableName, columnName):
-        pass
+# Encapsulates an operation that is done on a database entity
+class DbOperation:
+
+    def __init__(self, operationType, databaseName, tableName=None, columnName=None):
+        if (databaseName is None) or (databaseName == ''):
+            databaseName = config.DB
+        self.operationType = operationType
+        self.databaseName = databaseName
+        self.tableName = tableName
+        self.columnName = columnName
+
+    def __str__(self):
+        st = ''
+        if (DbOperationType == DbOperationType.read):
+            st+='Read'
+        if (DbOperationType == DbOperationType.write):
+            st+='Write'
+        st += ':'
+        st += self.databaseName
+        if self.tableName is not None:
+            st += ':' + self.tableName
+        if self.columnName is not None:
+            st += ':' + self.columnName
+        return st
+
+# Encapsulates a read operation that is done on a database entity
+class DbOperationRead(DbOperation):
+    def __init__(self, databaseName, tableName=None, columnName=None):
+        DbOperation(DbOperationType.read, databaseName, tableName, columnName)
+
+# Encapsulates a write operation that is done on a database entity
+class DbOperationWrite(DbOperation):
+    def __init__(self, databaseName, tableName=None, columnName=None):
+        DbOperation(DbOperationType.write, databaseName, tableName, columnName)
+
+# Define a custom credential handler here by defining function taking a DbOperation and a CredentialInformation
+# returning True if granted, false if not
+DbCredentialVerifier = None
 
 class CredentialException(Exception):
     def __init__(self, message):
         Exception.__init__(self, message)
 
-class CredentialReadDatabaseException(CredentialException):
-    def __init__(self, databaseName, tableName=None, columnName=None):
-        str = "Insufficient privileges to perform this action. [Read:" + databaseName
-        if tableName:
-            str += ',' + tableName
-        if columnName:
-            str += ',' + columnName
-        str +=']'
+class CredentialDatabaseException(CredentialException):
+    def __init__(self, operation):
+        str = "Insufficient privileges to perform this action. \n[" + str(operation)
         CredentialException.__init__(self, str)
 
-class CredentialModifyDatabaseException(CredentialException):
-    def __init__(self, databaseName, tableName=None, columnName=None):
-        str = "Insufficient privileges to perform this action. [Modify:" + databaseName
-        if tableName:
-            str += ',' + tableName
-        if columnName:
-            str += ',' + columnName
-        str +=']'
-        CredentialException.__init__(self, str)
 
+
+# Encapsulates information about the credentials a user has
 class CredentialInformation:
     def __init__(self):
         pass
@@ -42,29 +68,17 @@ class CredentialInformation:
         if 'environ' not in returndata:
             raise Exception('Data does not contain environment information')
 
-    def CanReadDatabase(self, databaseName, tableName=None, columnName=None):
-        if (databaseName is None) or (databaseName == ''):
-            databaseName = config.DB
-        # !!! todo: implement
-        # if databaseName == 'datasetindex':
-        #     return True
-        # if databaseName == 'Geographic':
-        #     return True
+    # operation is of type DbOperation
+    def CanDo(self, operation):
+        if DbCredentialVerifier is not None:
+            return DbCredentialVerifier(self, operation)
         return True
 
-    def CanModifyDatabase(self, databaseName, tableName=None, columnName=None):
-        if (databaseName is None) or (databaseName == ''):
-            databaseName = config.DB
-        # !!! todo: implement
-        return True
+    # operation is of type DbOperation
+    def VerifyCanDo(self, operation):
+        if not(self.CanDo(operation)):
+            raise CredentialDatabaseException(operation)
 
-    def VerifyCanReadDatabase(self, databaseName, tableName=None, columnName=None):
-        if not(self.CanReadDatabase(databaseName)):
-            raise CredentialReadDatabaseException(databaseName, tableName, columnName)
-
-    def VerifyCanModifyDatabase(self, databaseName, tableName=None, columnName=None):
-        if not(self.CanModifyDatabase(databaseName)):
-            raise CredentialModifyDatabaseException(databaseName, tableName, columnName)
 
 
 
@@ -73,10 +87,17 @@ def ParseCredentialInfo(returndata):
     cred.ParseFromReturnData(returndata)
     return cred
 
+
+
+
+
+
+
+
 def OpenDatabase(credInfo, database=None):
     if (database is None) or (database == ''):
         database = config.DB
-    credInfo.VerifyCanReadDatabase(database)
+    credInfo.VerifyCanDo(DbOperationRead(database))
     return MySQLdb.connect(host=config.DBSRV, user=config.DBUSER, passwd=config.DBPASS, db=database, charset='utf8')
 
 def OpenNoDatabase(credInfo):
