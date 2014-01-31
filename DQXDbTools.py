@@ -9,6 +9,7 @@ class DbOperationType:
     read = 1
     write = 2
 
+
 # Encapsulates an operation that is done on a database entity
 class DbOperation:
 
@@ -19,6 +20,18 @@ class DbOperation:
         self.databaseName = databaseName
         self.tableName = tableName
         self.columnName = columnName
+
+    def IsModify(self):
+        return self.operationType == DbOperationType.write
+
+    def OnDatabase(self, databaseName):
+        return self.databaseName == databaseName
+
+    def OnTable(self, tableName):
+        return self.tableName == tableName
+
+    def OnColumn(self, columnName):
+        return self.columnName == columnName
 
     def __str__(self):
         st = ''
@@ -34,27 +47,47 @@ class DbOperation:
             st += ':' + self.columnName
         return st
 
+
 # Encapsulates a read operation that is done on a database entity
 class DbOperationRead(DbOperation):
     def __init__(self, databaseName, tableName=None, columnName=None):
         DbOperation.__init__(self, DbOperationType.read, databaseName, tableName, columnName)
+
 
 # Encapsulates a write operation that is done on a database entity
 class DbOperationWrite(DbOperation):
     def __init__(self, databaseName, tableName=None, columnName=None):
         DbOperation.__init__(self, DbOperationType.write, databaseName, tableName, columnName)
 
+
+# Encapsulates the result of an authorisation request on a database operation
+class DbAuthorization:
+    def __init__(self, granted, reason=None):
+        self.granted = granted
+        if reason is None:
+            if not granted:
+                reason = 'Insufficient privileges to perform this action.'
+            else:
+                reason = ''
+        self.reason = reason
+    def IsGranted(self):
+        return self.granted
+    def __str__(self):
+        return self.reason
+
+
 # Define a custom credential handler here by defining function taking a DbOperation and a CredentialInformation
-# returning True if granted, false if not
+# returning a DbAuthorization instance
 DbCredentialVerifier = None
+
 
 class CredentialException(Exception):
     def __init__(self, message):
         Exception.__init__(self, message)
 
 class CredentialDatabaseException(CredentialException):
-    def __init__(self, operation):
-        st = "Insufficient privileges to perform this action. \n\n[" + str(operation) + ']'
+    def __init__(self, operation, auth):
+        st = str(auth) + " \n\n[" + str(operation) + ']'
         CredentialException.__init__(self, st)
 
 
@@ -62,29 +95,41 @@ class CredentialDatabaseException(CredentialException):
 # Encapsulates information about the credentials a user has
 class CredentialInformation:
     def __init__(self):
-        pass
+        self.clientaddress = None
+        self.userid = 'anonymous'
 
-    def ParseFromReturnData(self, returndata):
-        if 'environ' not in returndata:
+    def ParseFromReturnData(self, requestData):
+        if 'environ' not in requestData:
             raise Exception('Data does not contain environment information')
+        environ = requestData['environ']
+        #print('ENV:'+str(environ))
+
+        if 'REMOTE_ADDR' in environ:
+            self.clientaddress = environ['REMOTE_ADDR']
+        if 'REMOTE_USER' in environ:
+            self.userid = environ['REMOTE_USER']
 
     # operation is of type DbOperation
     def CanDo(self, operation):
         if DbCredentialVerifier is not None:
-            return DbCredentialVerifier(self, operation)
-        return True
+            auth = DbCredentialVerifier(self, operation)
+            return auth.IsGranted()
+        else:
+            return True
 
-    # operation is of type DbOperation. raises an error of not authorised
+    # operation is of type DbOperation. raises an exception of not authorised
     def VerifyCanDo(self, operation):
-        if not(self.CanDo(operation)):
-            raise CredentialDatabaseException(operation)
+        if DbCredentialVerifier is not None:
+            auth = DbCredentialVerifier(self, operation)
+            if not(auth.IsGranted()):
+                raise CredentialDatabaseException(operation, auth)
 
 
 
-
-def ParseCredentialInfo(returndata):
+# Create a credential info instance from a DQXServer request data environment
+def ParseCredentialInfo(requestData):
     cred = CredentialInformation()
-    cred.ParseFromReturnData(returndata)
+    cred.ParseFromReturnData(requestData)
     return cred
 
 
