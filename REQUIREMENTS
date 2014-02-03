@@ -1,4 +1,4 @@
-MySQL-python==1.2.4
+# MySQL-python==1.2.4
 argparse==1.2.1
 simplejson==3.0.7
 werkzeug==0.9.4
