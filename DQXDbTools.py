@@ -74,6 +74,10 @@ class DbAuthorization:
         return self.granted
     def __str__(self):
         return self.reason
+    def __nonzero__(self):
+        return self.granted
+    def __bool__(self):
+        return self.granted
 
 
 # Define a custom credential handler here by defining function taking a DbOperation and a CredentialInformation
@@ -97,6 +101,7 @@ class CredentialInformation:
     def __init__(self):
         self.clientaddress = None
         self.userid = 'anonymous'
+        self.groupids = []
 
     def ParseFromReturnData(self, requestData):
         if 'environ' not in requestData:
@@ -108,6 +113,16 @@ class CredentialInformation:
             self.clientaddress = environ['REMOTE_ADDR']
         if 'REMOTE_USER' in environ:
             self.userid = environ['REMOTE_USER']
+        if 'HTTP_CAS_MEMBEROF' in environ:
+            for groupStr in environ['HTTP_CAS_MEMBEROF'].split(';'):
+                groupPath = []
+                for tokenStr in groupStr.split(','):
+                    tokenid = tokenStr.split('=')[0]
+                    tokencontent = tokenStr.split('=')[1]
+                    if (tokenid == 'cn') or (tokenid == 'ou'):
+                        groupPath.append(tokencontent)
+                self.groupids.append('.'.join(groupPath.reversed()))
+
 
     # operation is of type DbOperation
     def CanDo(self, operation):
