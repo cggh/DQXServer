@@ -28,12 +28,8 @@ def application(environ, start_response):
     returndata = dict((k,v[0]) for k,v in parse_qs(environ['QUERY_STRING']).items())
     if 'datatype' not in returndata:
         DQXUtils.LogServer('--> request does not contain datatype')
-        status = '404 NOT FOUND'
-        response=''
-        response_headers = [('Content-type', 'application/json'),
-                            ('Content-Length', str(len(response)))]
-        start_response(status, response_headers)
-        yield uploadfile.response(environ)
+        start_response('404 NOT FOUND', [('Content-Type', 'text/plain')])
+        yield 'Not found: request does not contain datatype'
         return
 
     request_type = returndata['datatype']
