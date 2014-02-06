@@ -105,6 +105,7 @@ class CredentialInformation:
 
     def ParseFromReturnData(self, requestData):
         if ('isRunningLocal' in requestData) and (requestData['isRunningLocal']):
+            self.userid = 'local'
             return
 
         if 'environ' not in requestData:
