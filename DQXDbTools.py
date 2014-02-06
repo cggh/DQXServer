@@ -125,7 +125,7 @@ class CredentialInformation:
                     tokencontent = tokenStr.split('=')[1]
                     if (tokenid == 'cn') or (tokenid == 'ou'):
                         groupPath.append(tokencontent)
-                self.groupids.append('.'.join(groupPath.reversed()))
+                self.groupids.append('.'.join(reversed(groupPath)))
 
 
     # operation is of type DbOperation
