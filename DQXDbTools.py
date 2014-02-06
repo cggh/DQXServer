@@ -104,6 +104,9 @@ class CredentialInformation:
         self.groupids = []
 
     def ParseFromReturnData(self, requestData):
+        if ('isRunningLocal' in requestData) and (requestData['isRunningLocal']):
+            return
+
         if 'environ' not in requestData:
             raise Exception('Data does not contain environment information')
         environ = requestData['environ']
