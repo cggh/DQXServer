@@ -9,34 +9,88 @@ def response(returndata):
     databaseName=None
     if 'database' in returndata:
         databaseName = returndata['database']
+
+    field_chrom = 'chromid'
+    if 'fieldchrom' in returndata:
+        field_chrom = returndata['fieldchrom']
+    field_start = 'fstart'
+    if 'fieldstart' in returndata:
+        field_start = returndata['fieldstart']
+    field_stop = 'fstop'
+    if 'fieldstop' in returndata:
+        field_stop = returndata['fieldstop']
+    field_id = 'fid'
+    if 'fieldid' in returndata:
+        field_id = returndata['fieldid']
+    field_name = 'fname'
+    if 'fieldname' in returndata:
+        field_name = returndata['fieldname']
+
+    hasFeatureType = ('ftype' in returndata) and (len(returndata['ftype']) > 0)
+    hasSubFeatures = (returndata['subfeatures']=='1') and ('fsubtype' in returndata)
+
+
     db = DQXDbTools.OpenDatabase(DQXDbTools.ParseCredentialInfo(returndata), databaseName)
     cur = db.cursor()
 
     tablename=DQXDbTools.ToSafeIdentifier(returndata['table'])
 
     typequerystring='(true)'
-    if ('ftype' in returndata) and (len(returndata['ftype']) > 0):
+    queryparams = []
+    if hasFeatureType:
         typequerystring = ' OR '.join(['(ftype="{0}")'.format(item) for item in returndata['ftype'].split(',')])
-    if returndata['subfeatures']=='1':
-        typequerystring+=' or (ftype="{1}")'.format(returndata['ftype'],returndata['fsubtype'])
-    statement='SELECT fstart, fstop, fname, fid, ftype, fparentid FROM {tablename} WHERE ({typequery}) and (chromid="{chromid}") and (fstop>={start}) and (fstart<={stop}) ORDER BY fstart'.format(
+    if hasSubFeatures:
+        typequerystring += ' or (ftype="{1}")'.format(returndata['ftype'], returndata['fsubtype'])
+
+    if 'qry' in returndata:
+        encodedquery = returndata['qry']
+        whc=DQXDbTools.WhereClause()
+        whc.ParameterPlaceHolder='%s'#NOTE!: MySQL PyODDBC seems to require this nonstardard coding
+        whc.Decode(encodedquery)
+        whc.CreateSelectStatement()
+        if len(whc.querystring_params) > 0:
+            typequerystring = whc.querystring_params
+            queryparams = whc.queryparams
+
+
+    statement = 'SELECT {field_start}, {field_stop}, {field_name}, {field_id},'.format(
+        field_start=field_start,
+        field_stop=field_stop,
+        field_name=field_name,
+        field_id=field_id
+    )
+
+    if hasFeatureType:
+        statement +=' ftype, fparentid'
+    else:
+        statement +=' "_" as ftype, "_" as fparentid'
+
+    statement += ' FROM {tablename} WHERE ({typequery}) and ({field_chrom}="{chromid}") and ({field_stop}>={start}) and ({field_start}<={stop}) ORDER BY {field_start}'.format(
         typequery=typequerystring,
         tablename=tablename,
         chromid=DQXDbTools.ToSafeIdentifier(returndata['chrom']),
         start=str(int(returndata['start'])),
-        stop=str(int(returndata['stop']))
+        stop=str(int(returndata['stop'])),
+        field_chrom=field_chrom,
+        field_start=field_start,
+        field_stop=field_stop
     )
+
+    print('==============ANNOT====== ')
+    print(str(returndata))
+    print(statement)
+    print('========================= ')
 
     # DQXUtils.LogServer(statement+'\n')
 
-    cur.execute(statement)
+    cur.execute(statement, queryparams)
     starts=[]
     stops=[]
     names=[]
     ids=[]
     types=[]
     parentids=[]
-    for row in cur.fetchall() :
+    for row in cur.fetchall():
         starts.append(float(row[0]))
         stops.append(float(row[1]))
         name=row[2]
