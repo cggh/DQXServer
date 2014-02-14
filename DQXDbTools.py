@@ -156,16 +156,32 @@ def ParseCredentialInfo(requestData):
 
 
 
+def CreateOpenDatabaseArguments():
+    args = {
+        'host': config.DBSRV,
+        'charset': 'utf8'
+    }
+    try:
+        if (len(config.DBUSER) > 0) and (len(config.DBPASS) > 0):
+            args['user'] = config.DBUSER
+            args['passwd'] = config.DBPASS
+    except:
+        args['read_default_file'] = '~/.my.cnf'
 
+    return args
 
 def OpenDatabase(credInfo, database=None):
     if (database is None) or (database == ''):
         database = config.DB
     credInfo.VerifyCanDo(DbOperationRead(database))
-    return MySQLdb.connect(host=config.DBSRV, user=config.DBUSER, passwd=config.DBPASS, db=database, charset='utf8')
+
+    args = CreateOpenDatabaseArguments()
+    args['db'] = database
+    return MySQLdb.connect(**args)
 
 def OpenNoDatabase(credInfo):
-    return MySQLdb.connect(host=config.DBSRV, user=config.DBUSER, passwd=config.DBPASS, charset='utf8')
+    args = CreateOpenDatabaseArguments()
+    return MySQLdb.connect(**args)
 
 
 def ToSafeIdentifier(st):
