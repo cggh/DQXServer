@@ -5,23 +5,38 @@ import struct
 NATIVE_ENDIAN = '<' if (np.dtype("<i").byteorder == '=') else '>'
 
 def _strict_dtype_string(dtype):
-	if not dtype.isbuiltin:
-		raise Exception("Only scalar builtin dtypes (ie not structured with fields or user-defined) currently supported")
+    if dtype.str[1] == 'S' or dtype.str[1] == 'U':
+        return 'S'
+    if not dtype.isbuiltin:
+        raise Exception("Only scalar builtin dtypes (ie not structured with fields or user-defined) or strings currently supported")
 #Old method commented out as length is platform dependant
 #	byte_order = dtype.byteorder
 #	if byte_order == '=':
 #		byte_order = NATIVE_ENDIAN
 #	return byte_order + dtype.char
 	#New method gives explicit num bytes and endianness
-	return dtype.str
+    return dtype.str
+
+#Convert a string array to a chain of null terminated strings
+def pack_string_array(array):
+    result = ''
+    for string in np.nditer(array):
+        result += str(string)
+        result += chr(0)
+    return result
 
 def _encode_numpy_array(array):
-	for char in _strict_dtype_string(array.dtype):
-		yield char
-	yield chr(0)
-	yield struct.pack('<B', len(array.shape))
-	for dim in array.shape:
-		yield struct.pack('<L', dim)
+    dtype = _strict_dtype_string(array.dtype)
+    for char in dtype:
+        yield char
+    yield chr(0)
+    yield struct.pack('<B', len(array.shape))
+    for dim in array.shape:
+        yield struct.pack('<L', dim)
+    if dtype == 'S':
+        data = pack_string_array(array)
+    else:
+        data = array.data
 	yield struct.pack('<L', len(array.data))
 	for byte in array.data:
 		yield byte
