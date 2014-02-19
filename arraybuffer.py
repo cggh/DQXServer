@@ -1,6 +1,6 @@
 import numpy as np
 import struct
-
+from operator import mul
 
 NATIVE_ENDIAN = '<' if (np.dtype("<i").byteorder == '=') else '>'
 
@@ -37,9 +37,9 @@ def _encode_numpy_array(array):
         data = pack_string_array(array)
     else:
         data = array.data
-	yield struct.pack('<L', len(array.data))
-	for byte in array.data:
-		yield byte
+    yield struct.pack('<L', reduce(mul,array.shape))
+    for byte in data:
+        yield byte
 
 def encode_array(array, dtype=None):
     """Encode an array for a JS arraybuffer
@@ -54,7 +54,7 @@ def encode_array(array, dtype=None):
       endianness as first char. '<' little-endian, '>' big-endian, '|'not applicable.
     - 1-byte unsigned little endian number of dimensions = D
     - D x 4-byte unsigned little endians dimension sizes
-    - 4-byte unsigned little endian buffer size (equal to the product of dimension sizes and byte length of dtype)
+    - 4-byte unsigned little endian array length (equal to the product of dimension sizes)
     - The buffer itself.
 
     """
@@ -84,7 +84,7 @@ def encode_array_set(array_set):
           endianness as first char. '<' little-endian, '>' big-endian, '|'not applicable.
         - 1-byte unsigned little endian number of dimensions = D
         - D x 4-byte unsigned little endians dimension sizes
-        - 4-byte unsigned little endian buffer size (equal to the product of dimension sizes and byte length of dtype)
+        - 4-byte unsigned little endian array length (equal to the product of dimension sizes)
         - The buffer itself.
 
     """
