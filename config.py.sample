@@ -1,6 +1,8 @@
 
 ###########################################################################################################
+#
 # Configuration parameters for connecting to the MySQL database
+#
 ###########################################################################################################
 
 # Machine name where the database is running
@@ -23,9 +25,14 @@ pythoncommand = 'python'
 
 
 ###########################################################################################################
+#
 # Server side file structure location
+# *** NOTE: these have to be specified as absolute paths! ***
+#
 #########################################################################################################
+
 # Root directory of the server side file structure
 BASEDIR = '.....'
 
+# Root directory of the source data file structure
 SOURCEDATADIR = '.....'
