@@ -171,9 +171,13 @@ def CreateOpenDatabaseArguments():
         'charset': 'utf8'
     }
     try:
-        if (len(config.DBUSER) > 0) and (len(config.DBPASS) > 0):
+        if (len(config.DBUSER) > 0):
             args['user'] = config.DBUSER
-            args['passwd'] = config.DBPASS
+            try:
+                if len(config.DBPASS) > 0:
+                    args['passwd'] = config.DBPASS #try to add password
+            except:
+                pass
     except:
         args['read_default_file'] = '~/.my.cnf'
 
