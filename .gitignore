@@ -4,6 +4,7 @@ scripts/Local
 .idea
 customresponders
 Convertors/TableUtils
+static
 
 #################
 ## Eclipse
