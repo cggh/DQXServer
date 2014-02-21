@@ -163,11 +163,19 @@ class CASMiddleware(object):
             else:
                 logging.debug('Does not have ticket redirecting')
                 service_url = get_original_url(environ)
-                start_response('302 Moved Temporarily', [
-                    ('Location',
-                     '%s?service=%s' % (self._login_url,
-                                        quote(service_url)))
-                    ])
+                # Checking if we came here from an AJAX request to DQXServer
+                # Note that in principle this should not happen, as the first thing to authenticate is the html page
+                # Sending a clean error message to the client in this case anyway
+                if service_url.find('DQXServer?datatype=') > 0:
+                    resp = '{"Error":"NotAuthenticated"}'
+                    start_response('200 OK', [('Content-type', 'application/json'), ('Content-Length', str(len(resp)))])
+                    return [resp]
+                else:
+                    start_response('302 Moved Temporarily', [
+                        ('Location',
+                         '%s?service=%s' % (self._login_url,
+                                            quote(service_url)))
+                        ])
                 return []
                     
     def _get_session(self, environ):
