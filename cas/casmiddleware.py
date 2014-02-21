@@ -209,9 +209,11 @@ class CASMiddleware(object):
     #Communicate values to the rest of the application
     def _set_values(self, environ, session):
         username = self._get_session_var(session, CAS_USERNAME)
+        groups = self._get_session_var(session, CAS_GROUPS)
         logging.debug('Session authenticated for ' + username)
         environ['AUTH_TYPE'] = 'CAS'
         environ['REMOTE_USER'] = str(username)
+        environ['HTTP_CAS_MEMBEROF'] = str(groups)
 
     def _casfailed(self, environ, service_url, start_response):
         if self._casfailed_url is not None:

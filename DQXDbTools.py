@@ -118,14 +118,16 @@ class CredentialInformation:
         if 'REMOTE_USER' in environ:
             self.userid = environ['REMOTE_USER']
         if 'HTTP_CAS_MEMBEROF' in environ:
-            for groupStr in environ['HTTP_CAS_MEMBEROF'].split(';'):
+            cas_memberof = environ['HTTP_CAS_MEMBEROF'].strip('[]')
+            for groupStr in cas_memberof.split(', '):
                 groupPath = []
                 for tokenStr in groupStr.split(','):
+                    tokenStr = tokenStr.strip(' ')
                     tokenid = tokenStr.split('=')[0]
                     tokencontent = tokenStr.split('=')[1]
-                    if (tokenid == 'cn') or (tokenid == 'ou'):
+                    if (tokenid == 'cn') or (tokenid == 'ou') or (tokenid == 'dc'):
                         groupPath.append(tokencontent)
-                self.groupids.append('.'.join(reversed(groupPath)))
+                self.groupids.append('.'.join(groupPath))
 
 
     # operation is of type DbOperation
@@ -142,6 +144,13 @@ class CredentialInformation:
             auth = DbCredentialVerifier(self, operation)
             if not(auth.IsGranted()):
                 raise CredentialDatabaseException(operation, auth)
+
+    def GetAuthenticationInfo(self):
+        str = ''
+        str += 'USER=' + self.userid
+        str += ';CLIENTADDRESS=' + self.clientaddress
+        str += ';GROUPS=' + ','.join(self.groupids)
+        return str
 
 
 
