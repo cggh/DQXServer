@@ -49,10 +49,3 @@ CAS_LOGOUT_DESTINATION = ''
 #A page to show if validation fails
 CAS_FAILURE_PAGE = None
 
-# Configure the SessionMiddleware (Beaker)
-# You may wish to change the data_dir but this will work
-session_opts = {
-    'session.type': 'file',
-    'session.cookie_expires': True,
-    'session.data_dir': tempfile.gettempdir() + '/panoptes'
-}
