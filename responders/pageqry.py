@@ -56,10 +56,12 @@ def response(returndata):
         sqlquery += " ORDER BY {0}".format(DQXDbTools.CreateOrderByStatement(myorderfield,sortreverse))
     sqlquery += " LIMIT {0}, {1}".format(rownr1,rownr2-rownr1+1)
 
-    # DQXUtils.LogServer('################################################')
-    # DQXUtils.LogServer('###QRY:'+sqlquery)
-    # DQXUtils.LogServer('###PARAMS:'+str(whc.queryparams))
-    # DQXUtils.LogServer('################################################')
+    if False:
+        DQXUtils.LogServer('################################################')
+        DQXUtils.LogServer('###QRY:'+sqlquery)
+        DQXUtils.LogServer('###PARAMS:'+str(whc.queryparams))
+        DQXUtils.LogServer('################################################')
+
 
     cur.execute(sqlquery,whc.queryparams)
 
