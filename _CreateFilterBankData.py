@@ -7,7 +7,7 @@ basedir='.'
 
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
 #basedir='C:\Data\Test\Genome'
-#sys.argv=['','Test','Summ01']
+#sys.argv=['','/home/pvaut/Documents/Genome/Tracks-PfPopGen3.1/Coverage2','Summ01']
 #============= END OF FAKE STUFF ============================================
 
 

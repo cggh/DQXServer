@@ -5,6 +5,13 @@ import os
 import re
 import DQXEncoder
 import random
+import simplejson
+import math
+import DQXMathUtils
+import os
+import re
+import DQXEncoder
+import random
 
 
 #############################################################################################
@@ -233,7 +240,9 @@ class Creator:
         self.config=iconfig
         self.datadir=self.basedir+'/'+self.folder
         print('Initialising Creator, directory="{0}", config="{1}"'.format(self.datadir,self.config))
-        configdata=ReadJsonFile(self.datadir+'/'+self.config+".cnf")
+        configfilename = self.datadir+'/'+self.config+".cnf"
+        print('config filename= ' + configfilename)
+        configdata=ReadJsonFile(configfilename)
         if configdata is None:
             self.present = False
             return
