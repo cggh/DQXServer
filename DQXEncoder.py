@@ -47,7 +47,7 @@ class EncoderFloat2B64(Encoder):
         intval=int(round((float(inp)-self.min)*self.mulfac))
         if intval<0: intval=0
         if intval>self.compressedRange:
-            print('WARNING: Float out of range: {0} vs {1}'.format(inp,self.max))
+#            print('WARNING: Float out of range: {0} vs {1}'.format(inp,self.max))
             intval=self.compressedRange
         return self.b64.Int2B64(intval,self.length)
     def getlength(self):
