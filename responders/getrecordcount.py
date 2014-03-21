@@ -8,6 +8,10 @@ def response(returndata):
     mytablename=returndata['tbname']
     encodedquery=returndata['qry']
 
+    maxrecordcount = 10000
+    if 'maxrecordcount' in returndata:
+        maxrecordcount = int(returndata['maxrecordcount'])
+
     databaseName=None
     if 'database' in returndata:
         databaseName = returndata['database']
@@ -21,14 +25,19 @@ def response(returndata):
 
 
     #Determine total number of records
-    sqlquery="SELECT COUNT(*) FROM {0}".format(mytablename)
+    sqlquery="SELECT COUNT(*) FROM (SELECT * FROM {0}".format(mytablename)
     if len(whc.querystring_params) > 0:
         sqlquery += " WHERE {0}".format(whc.querystring_params)
+    sqlquery += ' LIMIT '+str(maxrecordcount)
+    sqlquery += ') as tmp_table'
     # DQXUtils.LogServer('   executing count query...')
     tm = DQXUtils.Timer()
     cur.execute(sqlquery, whc.queryparams)
     # DQXUtils.LogServer('   finished in {0}s'.format(tm.Elapsed()))
-    returndata['TotalRecordCount'] = cur.fetchone()[0]
+    recordcount = cur.fetchone()[0]
+    returndata['TotalRecordCount'] = recordcount
+    if recordcount >= maxrecordcount:
+        returndata['Truncated'] = True
 
     cur.close()
     db.close()
