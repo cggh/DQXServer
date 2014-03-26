@@ -144,6 +144,32 @@ class EncoderBoolean(Encoder):
     def getDataType(self):
         return "Boolean"
 
+class EncoderMultiCatCount(Encoder):
+    def __init__(self, info):
+        Encoder.__init__(self, info)
+        self.catcount = info['CatCount']
+        self.encoderlen = info['EncoderLen']
+        self.b64 = B64.B64()
+        self.maxval = 64**self.encoderlen
+
+    def perform(self, inp):
+        if len(inp) != self.catcount:
+            raise Exception('Inconsistent length for EncoderMultiCatCount')
+        str = ''
+        for val in inp:
+            if int(val) >= self.maxval:
+                print('WARNING: VALUE INT ENCODER EXCEEDS MAXIMUM {0} > {1}'.format(inp, self.maxval))
+                val = self.maxval-1
+            str += self.b64.Int2B64(val, self.encoderlen)
+        return str
+
+    def getlength(self):
+        return self.catcount * self.encoderlen
+    def getInfo(self):
+        return {'ID':'MultiCatCount', 'CatCount':self.catcount, 'EncoderLen': self.encoderlen }
+    def getDataType(self):
+        return "MultiCatCount"
+
 
 
 def GetEncoder(info):
@@ -153,6 +179,8 @@ def GetEncoder(info):
         return EncoderFloat2B64(info)
     if info['ID']=='FloatList2B64':
         return EncoderFloatList2B64(info)
+    if info['ID']=='MultiCatCount':
+        return EncoderMultiCatCount(info)
     if info['ID']=='FixedString':
         return EncoderFixedString(info)
     if info['ID']=='LimitString':

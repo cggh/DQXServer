@@ -97,11 +97,6 @@ class SummariserMostFrequent(Summariser):
                 if freqdict[item]==maxfreq:
                     mostfrequentitemlist.append(item)
             mostfrequentitem=mostfrequentitemlist[random.randint(0,len(mostfrequentitemlist)-1)]
-#            if len(lst)>2:
-#                print('----------------')
-#                print(str(freqdict))
-#                print(str(mostfrequentitemlist))
-#                print(str(mostfrequentitem))
             return mostfrequentitem
     def getInfo(self):
         return {'ID':'MostFrequent' }
@@ -173,6 +168,18 @@ class SummariserHistogram(Summariser):
         return normhisto
     def getInfo(self):
         return {'ID':'Histogram', 'Count':self.count, 'MinVal':self.minval, 'StepSize':self.stepsize }
+
+
+class SummariserMultiCatCount(Summariser):
+    def __init__(self,info):
+        Summariser.__init__(self,info)
+        self.catcount=info['Encoder']['CatCount']
+        self.categories=info['Encoder']['Categories']
+        self.encoderlen=info['Encoder']['EncoderLen']
+    def calcSummary(self,list):
+        raise Exception('Not implemented')
+    def getInfo(self):
+        return {'ID':'MultiCatCount', 'CatCount':self.catcount, 'EncoderLen':self.encoderlen }
 
 #############################################################################################
 
@@ -284,6 +291,8 @@ class Creator:
             mysumm=SummariserPickRandom(summinfo)
         if summinfo['Method']=='MostFrequent':
             mysumm=SummariserMostFrequent(summinfo)
+        if summinfo['Method']=='MultiCatCount':
+            mysumm=SummariserMultiCatCount(summinfo)
         if mysumm is None:
             raise Exception('Unknown summariser '+summinfo['Method'])
         return mysumm
