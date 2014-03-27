@@ -28,6 +28,10 @@ blockSizeMax = int(sys.argv[4])
 categories  = sys.argv[5].split(';')
 print('Categories: ' + str(categories))
 categorymap = {categories[i]:i for i in range(len(categories))}
+otherCategoryNr = None
+for i in range(categories):
+    if categories[i] == '_other_':
+        otherCategoryNr = i
 
 class Level:
     def __init(self):
@@ -61,15 +65,17 @@ class Summariser:
 
 
     def Add(self, pos, val):
-        if val != None:
-            if pos <= self.lastpos:
-                raise Exception('Positions should be strictly ordered')
-            for level in self.levels:
-                while pos >= level.currentblockend:
-                    self.CloseCurrentBlock(level)
-                    self.StartNextBlock(level)
-                if val in categorymap:
-                    level.catcounts[categorymap[val]] += 1
+        if pos <= self.lastpos:
+            raise Exception('Positions should be strictly ordered')
+        for level in self.levels:
+            while pos >= level.currentblockend:
+                self.CloseCurrentBlock(level)
+                self.StartNextBlock(level)
+            if val in categorymap:
+                level.catcounts[categorymap[val]] += 1
+            else:
+                if otherCategoryNr is not None:
+                    level.catcounts[otherCategoryNr] += 1
 
     def CloseCurrentBlock(self, level):
         level.outputfile.write(self.encoder.perform(level.catcounts))

@@ -179,7 +179,7 @@ class SummariserMultiCatCount(Summariser):
     def calcSummary(self,list):
         raise Exception('Not implemented')
     def getInfo(self):
-        return {'ID':'MultiCatCount', 'CatCount':self.catcount, 'EncoderLen':self.encoderlen }
+        return {'ID':'MultiCatCount', 'CatCount':self.catcount, 'EncoderLen':self.encoderlen, 'Categories': self.categories }
 
 #############################################################################################
 
