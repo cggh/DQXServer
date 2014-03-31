@@ -29,7 +29,7 @@ categories  = sys.argv[5].split(';')
 print('Categories: ' + str(categories))
 categorymap = {categories[i]:i for i in range(len(categories))}
 otherCategoryNr = None
-for i in range(categories):
+for i in range(len(categories)):
     if categories[i] == '_other_':
         otherCategoryNr = i
 
