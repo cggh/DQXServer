@@ -8,23 +8,28 @@ def response(returndata):
 
     databaseName=None
     if 'database' in returndata:
-        databaseName = returndata['database']
+        databaseName = DQXDbTools.ToSafeIdentifier(returndata['database'])
 
     field_chrom = 'chromid'
     if 'fieldchrom' in returndata:
-        field_chrom = returndata['fieldchrom']
+        field_chrom = DQXDbTools.ToSafeIdentifier(returndata['fieldchrom'])
     field_start = 'fstart'
     if 'fieldstart' in returndata:
-        field_start = returndata['fieldstart']
+        field_start = DQXDbTools.ToSafeIdentifier(returndata['fieldstart'])
     field_stop = 'fstop'
     if 'fieldstop' in returndata:
-        field_stop = returndata['fieldstop']
+        field_stop = DQXDbTools.ToSafeIdentifier(returndata['fieldstop'])
     field_id = 'fid'
     if 'fieldid' in returndata:
-        field_id = returndata['fieldid']
+        field_id = DQXDbTools.ToSafeIdentifier(returndata['fieldid'])
     field_name = 'fname'
     if 'fieldname' in returndata:
-        field_name = returndata['fieldname']
+        field_name = DQXDbTools.ToSafeIdentifier(returndata['fieldname'])
+    extrafield1 = None
+    hasExtraField1 = False
+    if 'extrafield1' in returndata:
+        hasExtraField1 = True
+        extrafield1 = DQXDbTools.ToSafeIdentifier(returndata['extrafield1'])
 
     hasFeatureType = ('ftype' in returndata) and (len(returndata['ftype']) > 0)
     hasSubFeatures = (returndata['subfeatures']=='1') and ('fsubtype' in returndata)
@@ -65,6 +70,10 @@ def response(returndata):
     else:
         statement +=' "_" as ftype, "_" as fparentid'
 
+    if hasExtraField1:
+        statement +=', ' + extrafield1
+
+
     statement += ' FROM {tablename} WHERE ({typequery}) and ({field_chrom}="{chromid}") and ({field_stop}>={start}) and ({field_start}<={stop}) ORDER BY {field_start}'.format(
         typequery=typequerystring,
         tablename=tablename,
@@ -76,20 +85,21 @@ def response(returndata):
         field_stop=field_stop
     )
 
-    print('==============ANNOT====== ')
-    print(str(returndata))
-    print(statement)
-    print('========================= ')
+    # print('==============ANNOT====== ')
+    # print(str(returndata))
+    # print(statement)
+    # print('========================= ')
 
     # DQXUtils.LogServer(statement+'\n')
 
     cur.execute(statement, queryparams)
-    starts=[]
-    stops=[]
-    names=[]
-    ids=[]
-    types=[]
-    parentids=[]
+    starts = []
+    stops = []
+    names = []
+    ids = []
+    types = []
+    parentids = []
+    extrafield1 = []
     for row in cur.fetchall():
         starts.append(float(row[0]))
         stops.append(float(row[1]))
@@ -101,13 +111,17 @@ def response(returndata):
         ids.append(id)
         types.append(tpe)
         parentids.append(parentid)
+        if hasExtraField1:
+            extrafield1.append(row[6])
 
     returndata['DataType']='Points'
     valcoder=B64.ValueListCoder()
-    returndata['Starts']=valcoder.EncodeIntegersByDifferenceB64(starts)
-    returndata['Sizes']=valcoder.EncodeIntegers([x[1]-x[0] for x in zip(starts,stops)])
-    returndata['Names']=valcoder.EncodeStrings(names)
-    returndata['IDs']=valcoder.EncodeStrings(ids)
-    returndata['Types']=valcoder.EncodeStrings(types)
-    returndata['ParentIDs']=valcoder.EncodeStrings(parentids)
+    returndata['Starts'] = valcoder.EncodeIntegersByDifferenceB64(starts)
+    returndata['Sizes'] = valcoder.EncodeIntegers([x[1]-x[0] for x in zip(starts,stops)])
+    returndata['Names'] = valcoder.EncodeStrings(names)
+    returndata['IDs'] = valcoder.EncodeStrings(ids)
+    returndata['Types'] = valcoder.EncodeStrings(types)
+    returndata['ParentIDs'] = valcoder.EncodeStrings(parentids)
+    if hasExtraField1:
+        returndata['ExtraField1'] = valcoder.EncodeStrings(extrafield1)
     return returndata
