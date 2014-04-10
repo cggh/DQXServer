@@ -152,6 +152,9 @@ class CredentialInformation:
         str += ';GROUPS=' + ','.join(self.groupids)
         return str
 
+    def GetUserId(self):
+        return self.userid
+
 
 
 # Create a credential info instance from a DQXServer request data environment
