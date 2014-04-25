@@ -242,6 +242,7 @@ class CASMiddleware(object):
         logging.debug('Session authenticated for ' + username)
         environ['AUTH_TYPE'] = 'CAS'
         environ['REMOTE_USER'] = str(username)
+        environ['HTTP_CAS_MEMBEROF'] = str(self._get_session_var(CAS_GROUPS))
 
     def _casfailed(self, environ, service_url, start_response):
 
