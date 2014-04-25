@@ -9,5 +9,5 @@ def response(returndata):
     f=open(config.BASEDIR+'/'+filename+'.txt')
     content=f.read()
     f.close()
-    returndata['content']=base64.b64encode(content)
+    returndata['content']=base64.b64encode_var2(content)
     return returndata

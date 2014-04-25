@@ -348,6 +348,12 @@ def test():
     else:
         func(sys.stdin, sys.stdout)
 
+def b64encode_var2(s):
+    return b64encode(s, '-_')
+
+def b64decode_var2(s):
+    return b64decode(s, '-_')
+
 
 def test1():
     s0 = "Aladdin:open sesame"
