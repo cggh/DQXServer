@@ -119,7 +119,8 @@ class CredentialInformation:
             self.userid = environ['REMOTE_USER']
         if 'HTTP_CAS_MEMBEROF' in environ:
             cas_memberof = environ['HTTP_CAS_MEMBEROF'].strip('[]')
-            for groupStr in cas_memberof.split(', '):
+            for groupStr in cas_memberof.split(';'):
+                groupStr = groupStr.strip(' ')
                 groupPath = []
                 for tokenStr in groupStr.split(','):
                     tokenStr = tokenStr.strip(' ')

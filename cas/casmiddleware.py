@@ -80,7 +80,7 @@ class CASMiddleware(object):
                     self._set_session_var(CAS_GROUPS, groupName[0])
                 elif self._protocol == 3:
                 #So that the value is the same for version 2 or 3
-                    self._set_session_var(CAS_GROUPS, '[' + ', '.join(groupName) + ']')
+                    self._set_session_var(CAS_GROUPS, '[' + ';'.join(groupName) + ']')
         dom.unlink()
 
         return username
