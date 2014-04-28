@@ -26,6 +26,10 @@ application = SharedDataMiddleware(application, {
     '/static': os.path.join(os.path.dirname(__file__), 'static')
 })
 
-if config.CAS_SERVICE != '':
+try:
+    cas_service = config.CAS_SERVICE
+except AttributeError:
+    cas_service = ''
+if cas_service != '':
   fs_session_store = FilesystemSessionStore()
-  application = CASMiddleware(application, cas_root_url = config.CAS_SERVICE, logout_url = config.CAS_LOGOUT_PAGE, logout_dest = config.CAS_LOGOUT_DESTINATION, protocol_version = config.CAS_VERSION, casfailed_url = config.CAS_FAILURE_PAGE, entry_page = '/static/main.html', session_store = fs_session_store, ignore_redirect = '(.*)\?datatype=', ignored_callback = ignored_callback)
+  application = CASMiddleware(application, cas_root_url = cas_service, logout_url = config.CAS_LOGOUT_PAGE, logout_dest = config.CAS_LOGOUT_DESTINATION, protocol_version = config.CAS_VERSION, casfailed_url = config.CAS_FAILURE_PAGE, entry_page = '/static/main.html', session_store = fs_session_store, ignore_redirect = '(.*)\?datatype=', ignored_callback = ignored_callback)
