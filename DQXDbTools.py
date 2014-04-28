@@ -1,6 +1,6 @@
 
 import simplejson
-import base64
+import DQXbase64
 import MySQLdb
 import config
 
@@ -225,7 +225,7 @@ class WhereClause:
 
     #Decodes an url compatible encoded query into the statement tree
     def Decode(self, encodedstr):
-        decodedstr=base64.b64decode_var2(encodedstr)
+        decodedstr=DQXbase64.b64decode_var2(encodedstr)
         self.query=simplejson.loads(decodedstr)
         pass
 

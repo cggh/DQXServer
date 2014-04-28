@@ -1,4 +1,4 @@
-import base64
+import DQXbase64
 import config
 import commands
 
