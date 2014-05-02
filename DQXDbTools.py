@@ -254,7 +254,7 @@ class WhereClause:
 
     def _CreateSelectStatementSub_Comparison(self,statm):
         #TODO: check that statm['ColName'] corresponds to a valid column name in the table (to avoid SQL injection)
-        if not(statm['Tpe'] in ['=', '<>', '<', '>', '<=', '>=', '!=', 'LIKE', 'CONTAINS', 'NOTCONTAINS', 'STARTSWITH', 'ISPRESENT', 'ISABSENT', '=FIELD', '<>FIELD', '<FIELD', '>FIELD', 'between']):
+        if not(statm['Tpe'] in ['=', '<>', '<', '>', '<=', '>=', '!=', 'LIKE', 'CONTAINS', 'NOTCONTAINS', 'STARTSWITH', 'ISPRESENT', 'ISABSENT', '=FIELD', '<>FIELD', '<FIELD', '>FIELD', 'between', 'ISEMPTYSTR', 'ISNOTEMPTYSTR']):
             raise Exception("Invalid comparison statement {0}".format(statm['Tpe']))
 
         processed=False
@@ -269,6 +269,18 @@ class WhereClause:
         if statm['Tpe']=='ISABSENT':
             processed=True
             st='{0} IS NULL'.format(statm['ColName'])
+            self.querystring+=st
+            self.querystring_params+=st
+
+        if statm['Tpe']=='ISEMPTYSTR':
+            processed=True
+            st='{0}=""'.format(statm['ColName'])
+            self.querystring+=st
+            self.querystring_params+=st
+
+        if statm['Tpe']=='ISNOTEMPTYSTR':
+            processed=True
+            st='{0}<>""'.format(statm['ColName'])
             self.querystring+=st
             self.querystring_params+=st
 
