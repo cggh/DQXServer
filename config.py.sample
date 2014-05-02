@@ -37,6 +37,11 @@ BASEDIR = '.....'
 # Root directory of the source data file structure
 SOURCEDATADIR = '.....'
 
+
+# Specify location of the file containing the authorisation info
+# AUTHORISATIONFILE = '.....'
+
+
 #The URL of your CAS server - if this is set then CAS will be enabled
 # e.g. https://mydomain/cas
 CAS_SERVICE = ''
