@@ -104,6 +104,17 @@ class ValueListCoder:
         )
         return result
 
+
+    def EncodeFloatsH(self, vals):
+        result={}
+        result['Encoding']="FloatAsH"
+        result['Data']=','.join(
+            [(vl is None and ('~')) or (str(vl)) for vl in vals]
+        )
+        return result
+
+
+
     def EncodeStrings(self, vals):
         #!!!todo: ensure that all string have nice compatible ascii content
         result={}
@@ -137,4 +148,6 @@ class ValueListCoder:
             return self.EncodeFloatsByIntB64(vals,3)
         if methodid=='F4':
             return self.EncodeFloatsByIntB64(vals,4)
+        if methodid=='FH':
+            return self.EncodeFloatsH(vals)
         raise Exception('Invalid column encoding identifier {0}'.format(methodid))
