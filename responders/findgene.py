@@ -43,9 +43,10 @@ def response(returndata):
             patternstr="{0}%".format(mypattern)
             if trynr==1:
                 patternstr="%{0}%".format(mypattern)
-            statement='SELECT fname, chromid, fstart, fstop,fid,fnames,descr FROM {tablename} WHERE ((ftype="gene") or (ftype="pseudogene")) and ((fname LIKE "{pattern}") or (fnames LIKE "{pattern}") or (descr LIKE "{pattern}") or (fid="{pattern}") or (fid LIKE "{pattern}")) LIMIT {maxcount}'.format(
+            statement='SELECT fname, chromid, fstart, fstop,fid,fnames,descr FROM {tablename} WHERE ((ftype="gene") or (ftype="pseudogene")) and ((fname LIKE "{pattern}") or (fnames LIKE "{pattern}") or (descr LIKE "{pattern}") or (fid="{mypattern}") or (fid LIKE "{pattern}")) LIMIT {maxcount}'.format(
                 tablename=DQXDbTools.ToSafeIdentifier(returndata['table']),
                 pattern=patternstr,
+                mypattern=mypattern,
                 maxcount=maxcount
             )
             cur.execute(statement)
