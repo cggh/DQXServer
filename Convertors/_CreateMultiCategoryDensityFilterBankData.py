@@ -161,7 +161,7 @@ while True:
             print(str(linecount))
     comps = line.split('\t')
     chromosome = comps[0]
-    pos = int(comps[1])
+    pos = int(float(comps[1]))
     val = comps[2]
     if chromosome != currentChromosome:
         if summariser != None:
