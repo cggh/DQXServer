@@ -43,9 +43,10 @@ def response(returndata):
             patternstr="{0}%".format(mypattern)
             if trynr==1:
                 patternstr="%{0}%".format(mypattern)
-            statement='SELECT fname, chromid, fstart, fstop,fid,fnames,descr FROM {tablename} WHERE ((ftype="gene") or (ftype="pseudogene")) and ((fname LIKE "{pattern}") or (fnames LIKE "{pattern}") or (descr LIKE "{pattern}") or (fid LIKE "{pattern}")) LIMIT {maxcount}'.format(
+            statement='SELECT fname, chromid, fstart, fstop,fid,fnames,descr FROM {tablename} WHERE ((ftype="gene") or (ftype="pseudogene")) and ((fname LIKE "{pattern}") or (fnames LIKE "{pattern}") or (descr LIKE "{pattern}") or (fid="{mypattern}") or (fid LIKE "{pattern}")) LIMIT {maxcount}'.format(
                 tablename=DQXDbTools.ToSafeIdentifier(returndata['table']),
                 pattern=patternstr,
+                mypattern=mypattern,
                 maxcount=maxcount
             )
             cur.execute(statement)
@@ -53,7 +54,7 @@ def response(returndata):
                 if len(names)<maxcount:
                     chromnrstr=row[1]
                     name=row[0]
-                    ident=name
+                    ident=str(name)
                     if reportAll:
                         ident+='_'+chromnrstr+' '+str(row[3])+' '+str(row[4])
                     if ident not in foundmap:
@@ -62,7 +63,7 @@ def response(returndata):
                         starts.append(row[2])
                         ends.append(row[3])
                         ids.append(row[4])
-                        descrs.append(str(row[5])+';'+str(row[6]))
+                        descrs.append(str(row[0])+';'+str(row[5])+';'+str(row[6]))
                         foundmap[ident]=1
             if len(names)>=maxcount:
                 trynr=99
