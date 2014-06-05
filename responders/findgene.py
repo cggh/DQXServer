@@ -54,7 +54,7 @@ def response(returndata):
                 if len(names)<maxcount:
                     chromnrstr=row[1]
                     name=row[0]
-                    ident=name
+                    ident=str(name)
                     if reportAll:
                         ident+='_'+chromnrstr+' '+str(row[3])+' '+str(row[4])
                     if ident not in foundmap:
