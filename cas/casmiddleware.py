@@ -1,7 +1,6 @@
-# This file is part of DQXServer - (C) Copyright 2014, Paul Vauterin, Ben Jeffery, Alistair Miles <info@cggh.org>
+# This file is part of DQXServer - (C) Copyright 2014, Paul Vauterin, Ben Jeffery, Alistair Miles, Ian Wright <info@cggh.org>
 # This program is free software licensed under the GNU Affero General Public License.
 # You can find a copy of this license in LICENSE in the top directory of the source code or at <http://opensource.org/licenses/AGPL-3.0>
-
 import logging
 import time
 from cgi import parse_qs
@@ -15,11 +14,11 @@ import re
 
 __all__ = ['CASMiddleware']
 
-
 # Session keys
 CAS_USERNAME = 'cas.username'
 CAS_GROUPS = 'cas.groups'
 CAS_TOKEN = 'cas.token'
+CAS_GATEWAY = 'cas.gateway'
 
 CAS_ORIGIN = 'cas.origin'
 
@@ -32,7 +31,7 @@ class CASMiddleware(object):
     samlNamespaceUri = 'urn:oasis:names:tc:SAML:2.0:assertion'
 
 
-    def __init__(self, application, cas_root_url, entry_page = '/', logout_url = '/logout', logout_dest = '', protocol_version = 2, casfailed_url=None, session_store = None, ignore_redirect = None, ignored_callback = None):
+    def __init__(self, application, cas_root_url, entry_page = '/', logout_url = '/logout', logout_dest = '', protocol_version = 2, casfailed_url=None, session_store = None, ignore_redirect = None, ignored_callback = None, gateway_redirect = None, group_separator = ';', group_environ = 'HTTP_CAS_MEMBEROF'):
         self._application = application
         self._root_url = cas_root_url
         self._login_url = cas_root_url + '/login'
@@ -50,6 +49,12 @@ class CASMiddleware(object):
           self._ignored_callback = ignored_callback
         else:
           self._ignore_redirect = None
+        if gateway_redirect is not None:
+          self._gateway_redirect = re.compile(gateway_redirect)
+        else:
+          self._gateway_redirect = None
+        self._group_separator = group_separator
+        self._group_environ = group_environ
 
 
     def _validate(self, service_url, ticket):
@@ -84,7 +89,7 @@ class CASMiddleware(object):
                     self._set_session_var(CAS_GROUPS, groupName[0])
                 elif self._protocol == 3:
                 #So that the value is the same for version 2 or 3
-                    self._set_session_var(CAS_GROUPS, '[' + ';'.join(groupName) + ']')
+                    self._set_session_var(CAS_GROUPS, '[' + self._group_separator.join(groupName) + ']')
         dom.unlink()
 
         return username
@@ -116,6 +121,8 @@ class CASMiddleware(object):
             form = parse_form_data(environ)[1]
             request_body = form['logoutRequest']
             request_body = unquote_plus(request_body).decode('utf8') 
+            logging.debug("POST:" + str(request_body))
+            logging.debug("POST:" + str(environ))
             dom = xml.dom.minidom.parseString(request_body)
             nodes = dom.getElementsByTagNameNS(self.samlpNamespaceUri, 'SessionIndex')
             if nodes:
@@ -186,10 +193,28 @@ class CASMiddleware(object):
                   if self._ignore_redirect.match(request.url):
                     if self._ignored_callback is not None:
                       return self._ignored_callback(environ, start_response)
+                is_gateway = ''
+                if self._gateway_redirect is not None:
+                  logging.debug('Gateway matching:' + request.url)
+                  if self._gateway_redirect.match(request.url):
+                    #See if we've been here before
+                    gw = self._get_session_var(CAS_GATEWAY)
+                    if gw != None:
+                      logging.debug('Not logged in carrying on to:' + request.url)
+                      self._remove_session_var(CAS_GATEWAY)
+                      self._save_session()
+                      #A bit paranoid but check it's the same URL
+                      if gw == request.url:
+                        return self._application(environ, start_response)
+                    
+                    logging.debug('Checking if logged in to CAS:' + request.url)
+                    is_gateway = '&gateway=true'
+                    self._set_session_var(CAS_GATEWAY, request.url)
+                    self._save_session()
                 logging.debug('Does not have ticket redirecting')
                 service_url = request.url
                 response.status = '302 Moved Temporarily'
-                response.headers['Location'] = '%s?service=%s' % (self._login_url, quote(service_url))
+                response.headers['Location'] = '%s?service=%s%s' % (self._login_url, quote(service_url),is_gateway)
                 response.set_cookie(CAS_COOKIE_NAME, value = self._session.sid, max_age = None, expires = None)
                 return response(environ, start_response)
 
@@ -213,7 +238,10 @@ class CASMiddleware(object):
         logging.debug("Setting session:" + name + " to " + value)
 
     def _get_session_var(self, name):
-        return (self._session[name])
+        if name in self._session:
+          return (self._session[name])
+        else:
+          return None
 
     def _save_session(self):
         if self._session.should_save:
@@ -246,7 +274,7 @@ class CASMiddleware(object):
         logging.debug('Session authenticated for ' + username)
         environ['AUTH_TYPE'] = 'CAS'
         environ['REMOTE_USER'] = str(username)
-        environ['HTTP_CAS_MEMBEROF'] = str(self._get_session_var(CAS_GROUPS))
+        environ[self._group_environ] = str(self._get_session_var(CAS_GROUPS))
 
     def _casfailed(self, environ, service_url, start_response):
 
