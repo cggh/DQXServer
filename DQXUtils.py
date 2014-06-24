@@ -25,8 +25,23 @@ def GetDQXServerPath():
     return os.path.dirname(os.path.realpath(__file__))
 
 
-identifierMatcher = re.compile(r"^[^\d\W]\w*\Z")
+identifierMatcher = re.compile(r"^[^\d\W][\w]*\Z")
 
-def CheckValidIdentifier(id):
+#    if not re.match("[_A-Za-z][_a-zA-Z0-9 ]*$", id):
+
+# TODO: this should be moved to Panoptes, as this is app specific
+reservedTableNames = ['2D_propertycatalog', '2D_tablecatalog', 'annotation', 'chromosomes', 'externallinks', 'propertycatalog', 'relations', 'settings', 'storedqueries', 'summaryvalues', 'tablebasedsummaryvalues', 'tablecatalog', 'workspaces']
+
+def CheckValidDatabaseIdentifier(id):
     if re.match(identifierMatcher, id) is None:
-        raise Exception('Invalid identifier: '+id)
+        raise Exception('Invalid identifier: (syntax error) "'+id+'"')
+
+def CheckValidTableIdentifier(id):
+    if re.match(identifierMatcher, id) is None:
+        raise Exception('Invalid identifier: (syntax error) "'+id+'"')
+    if id in reservedTableNames:
+        raise Exception('Invalid identifier: (reserved name) "' + id+'"')
+
+def CheckValidColumnIdentifier(id):
+    if re.match(identifierMatcher, id) is None:
+        raise Exception('Invalid identifier: (syntax error) "'+id+'"')

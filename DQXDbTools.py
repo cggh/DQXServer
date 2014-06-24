@@ -9,7 +9,7 @@ import MySQLdb
 import config
 
 
-LogRequests = True
+LogRequests = False
 
 
 # Enumerates types of actions that can be done on a database entity
@@ -223,6 +223,8 @@ def DBCOLESC(arg):
 def DBTBESC(arg):
     return '`'+ToSafeIdentifier(arg)+'`'
 
+def DBDBESC(arg):
+    return '`'+ToSafeIdentifier(arg)+'`'
 
 #parse column encoding information
 def ParseColumnEncoding(columnstr):
