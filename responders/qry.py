@@ -5,62 +5,68 @@
 import B64
 import DQXDbTools
 import DQXUtils
+from DQXDbTools import DBCOLESC
+from DQXDbTools import DBTBESC
 
 
 def response(returndata):
 
-    myposfield=DQXDbTools.ToSafeIdentifier(returndata['posfield'])
-    mytablename=DQXDbTools.ToSafeIdentifier(returndata['tbname'])
-    encodedquery=returndata['qry']
-    myorderfield=DQXDbTools.ToSafeIdentifier(returndata['order'])
+    myposfield = DQXDbTools.ToSafeIdentifier(returndata['posfield'])
+    mytablename = DQXDbTools.ToSafeIdentifier(returndata['tbname'])
+    encodedquery = returndata['qry']
+    myorderfield = DQXDbTools.ToSafeIdentifier(returndata['order'])
     # DQXUtils.LogServer('orderfield: '+myorderfield)
 
     mycolumns=DQXDbTools.ParseColumnEncoding(returndata['collist'])#!!!todo: verify that these column names are actual table columns
 
-    databaseName=None
+    databaseName = None
     if 'database' in returndata:
         databaseName = returndata['database']
     db = DQXDbTools.OpenDatabase(DQXDbTools.ParseCredentialInfo(returndata), databaseName)
     cur = db.cursor()
 
     whc=DQXDbTools.WhereClause()
-    whc.ParameterPlaceHolder='%s'#NOTE!: MySQL PyODDBC seems to require this nonstardard coding
+    whc.ParameterPlaceHolder = '%s' #NOTE!: MySQL PyODDBC seems to require this nonstardard coding
     whc.Decode(encodedquery)
     whc.CreateSelectStatement()
 
     sqlquery="SELECT {posfield}, {columnames} FROM {tablename}".format(
-        posfield=myposfield,
-        columnames=','.join([DQXDbTools.ToSafeIdentifier(x['Name']) for x in mycolumns]),
-        tablename=mytablename
+        posfield=DBCOLESC(myposfield),
+        columnames=','.join([DBCOLESC(x['Name']) for x in mycolumns]),
+        tablename=DBTBESC(mytablename)
     )
 
-    if len(whc.querystring_params)>0:
+    if len(whc.querystring_params) > 0:
         sqlquery += " WHERE {0}".format(whc.querystring_params)
 
-    if len(myorderfield)>0:
-        sqlquery += " ORDER BY {0}".format(myorderfield)
+    if len(myorderfield) > 0:
+        sqlquery += " ORDER BY {0}".format(DBCOLESC(myorderfield))
 
-    # DQXUtils.LogServer('QRY='+sqlquery)
+    if DQXDbTools.LogRequests:
+        DQXUtils.LogServer('################################################')
+        DQXUtils.LogServer('###QRY:'+sqlquery)
+        DQXUtils.LogServer('###PARAMS:'+str(whc.queryparams))
+        DQXUtils.LogServer('################################################')
     cur.execute(sqlquery, whc.queryparams)
 
-    returndata['DataType']='Points'
-    pointsx=[]
-    yvalrange=range(0,len(mycolumns))
-    pointsy=[]
+    returndata['DataType'] = 'Points'
+    pointsx = []
+    yvalrange=range(0, len(mycolumns))
+    pointsy = []
     for ynr in yvalrange:
         pointsy.append([])
-    for row in cur.fetchall() :
+    for row in cur.fetchall():
         pointsx.append(float(row[0]))
         for ynr in yvalrange:
-            if row[1+ynr]!=None:
+            if row[1+ynr] != None:
                 pointsy[ynr].append(row[1+ynr])
             else:
                 pointsy[ynr].append(None)
 
-    valcoder=B64.ValueListCoder()
-    returndata['XValues']=valcoder.EncodeIntegersByDifferenceB64(pointsx)
+    valcoder = B64.ValueListCoder()
+    returndata['XValues'] = valcoder.EncodeIntegersByDifferenceB64(pointsx)
     for ynr in yvalrange:
-        returndata[mycolumns[ynr]['Name']]=valcoder.EncodeByMethod(pointsy[ynr],mycolumns[ynr]['Encoding'])
+        returndata[mycolumns[ynr]['Name']] = valcoder.EncodeByMethod(pointsy[ynr], mycolumns[ynr]['Encoding'])
 
     cur.close()
     db.close()

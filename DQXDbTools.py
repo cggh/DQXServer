@@ -9,6 +9,8 @@ import MySQLdb
 import config
 
 
+LogRequests = True
+
 
 # Enumerates types of actions that can be done on a database entity
 class DbOperationType:

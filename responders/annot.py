@@ -6,6 +6,8 @@ import B64
 import DQXDbTools
 import DQXUtils
 import config
+from DQXDbTools import DBCOLESC
+from DQXDbTools import DBTBESC
 
 #Return annotation information for a chromosome region
 def response(returndata):

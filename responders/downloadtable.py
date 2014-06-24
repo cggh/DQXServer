@@ -3,6 +3,8 @@
 # You can find a copy of this license in LICENSE in the top directory of the source code or at <http://opensource.org/licenses/AGPL-3.0>
 
 import DQXDbTools
+from DQXDbTools import DBCOLESC
+from DQXDbTools import DBTBESC
 
 def response(returndata):
     mytablename=returndata['tbname']
@@ -23,12 +25,12 @@ def response(returndata):
     whc.Decode(encodedquery)
     whc.CreateSelectStatement()
 
-    sqlquery="SELECT {0} FROM {1}".format(','.join([x['Name'] for x in mycolumns]), mytablename)
+    sqlquery="SELECT {0} FROM {1}".format(','.join([DBCOLESC(x['Name']) for x in mycolumns]), DBTBESC(mytablename))
     if len(whc.querystring_params)>0:
         sqlquery+=" WHERE {0}".format(whc.querystring_params)
-    sqlquery+=" ORDER BY {0}".format(DQXDbTools.CreateOrderByStatement(myorderfield,sortreverse))
+    sqlquery+=" ORDER BY {0}".format(DQXDbTools.CreateOrderByStatement(myorderfield, sortreverse))
 
-    cur.execute(sqlquery,whc.queryparams)
+    cur.execute(sqlquery, whc.queryparams)
 
     yield '\t'.join(str(col[0]) for col in cur.description)+'\n'
 
