@@ -5,6 +5,8 @@
 import B64
 import DQXDbTools
 import DQXUtils
+from DQXDbTools import DBCOLESC
+from DQXDbTools import DBTBESC
 
 TIMEOUT = 30
 
@@ -33,35 +35,35 @@ def response(returndata):
 
     #Determine total number of records
     if int(returndata['needtotalcount'])>0:
-        sqlquery="SELECT COUNT(*) FROM {0}".format(mytablename)
-        if len(whc.querystring_params)>0:
-            sqlquery+=" WHERE {0}".format(whc.querystring_params)
+        sqlquery = "SELECT COUNT(*) FROM {0}".format(DBTBESC(mytablename))
+        if len(whc.querystring_params) > 0:
+            sqlquery += " WHERE {0}".format(whc.querystring_params)
         DQXUtils.LogServer('   executing count query...')
         tm = DQXUtils.Timer()
-        cur.execute(sqlquery,whc.queryparams)
+        cur.execute(sqlquery, whc.queryparams)
         DQXUtils.LogServer('   finished in {0}s'.format(tm.Elapsed()))
-        returndata['TotalRecordCount']=cur.fetchone()[0]
-
-
+        returndata['TotalRecordCount'] = cur.fetchone()[0]
 
     #Fetch the actual data
-    strrownr1,strrownr2=returndata['limit'].split('~')
-    rownr1=int(0.5+float(strrownr1))
-    rownr2=int(0.5+float(strrownr2))
-    if rownr1<0: rownr1=0
-    if rownr2<=rownr1: rownr2=rownr1+1
+    strrownr1, strrownr2 = returndata['limit'].split('~')
+    rownr1 = int(0.5+float(strrownr1))
+    rownr2 = int(0.5+float(strrownr2))
+    if rownr1 < 0:
+        rownr1 = 0
+    if rownr2 <= rownr1:
+        rownr2 = rownr1+1
 
     sqlquery = "SELECT "
     if isdistinct:
         sqlquery = "SELECT DISTINCT "
-    sqlquery += "{0} FROM {1}".format(','.join([x['Name'] for x in mycolumns]), mytablename)
-    if len(whc.querystring_params)>0:
+    sqlquery += "{0} FROM {1}".format(','.join([DBCOLESC(x['Name']) for x in mycolumns]), DBTBESC(mytablename))
+    if len(whc.querystring_params) > 0:
         sqlquery += " WHERE {0}".format(whc.querystring_params)
-    if len(myorderfield)>0:
-        sqlquery += " ORDER BY {0}".format(DQXDbTools.CreateOrderByStatement(myorderfield,sortreverse))
-    sqlquery += " LIMIT {0}, {1}".format(rownr1,rownr2-rownr1+1)
+    if len(myorderfield) > 0:
+        sqlquery += " ORDER BY {0}".format(DQXDbTools.CreateOrderByStatement(myorderfield, sortreverse))
+    sqlquery += " LIMIT {0}, {1}".format(rownr1, rownr2-rownr1+1)
 
-    if False:
+    if DQXDbTools.LogRequests:
         DQXUtils.LogServer('################################################')
         DQXUtils.LogServer('###QRY:'+sqlquery)
         DQXUtils.LogServer('###PARAMS:'+str(whc.queryparams))
@@ -77,26 +79,26 @@ def response(returndata):
         return returndata
 
 
-    returndata['DataType']='Points'
-    pointsx=[]
-    yvalrange=range(0,len(mycolumns))
-    pointsy=[]
+    returndata['DataType'] = 'Points'
+    pointsx = []
+    yvalrange = range(0, len(mycolumns))
+    pointsy = []
     for ynr in yvalrange:
         pointsy.append([])
-    rowidx=0
-    for row in cur.fetchall() :
+    rowidx = 0
+    for row in cur.fetchall():
         pointsx.append(rownr1+rowidx)
         for ynr in yvalrange:
-            if row[ynr]!=None:
+            if row[ynr] != None:
                 pointsy[ynr].append(row[ynr])
             else:
                 pointsy[ynr].append(None)
-        rowidx+=1
+        rowidx += 1
 
-    valcoder=B64.ValueListCoder()
-    returndata['XValues']=valcoder.EncodeIntegersByDifferenceB64(pointsx)
+    valcoder = B64.ValueListCoder()
+    returndata['XValues'] = valcoder.EncodeIntegersByDifferenceB64(pointsx)
     for ynr in yvalrange:
-        returndata[mycolumns[ynr]['Name']]=valcoder.EncodeByMethod(pointsy[ynr],mycolumns[ynr]['Encoding'])
+        returndata[mycolumns[ynr]['Name']] = valcoder.EncodeByMethod(pointsy[ynr], mycolumns[ynr]['Encoding'])
 
     cur.close()
     db.close()
