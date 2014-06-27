@@ -7,7 +7,7 @@ import DQXDbTools
 import DQXUtils
 from DQXDbTools import DBCOLESC
 from DQXDbTools import DBTBESC
-
+import config
 
 
 def response(returndata):
@@ -21,37 +21,33 @@ def response(returndata):
     databaseName=None
     if 'database' in returndata:
         databaseName = returndata['database']
-    db = DQXDbTools.OpenDatabase(DQXDbTools.ParseCredentialInfo(returndata), databaseName)
-    cur = db.cursor()
 
-    whc=DQXDbTools.WhereClause()
-    whc.ParameterPlaceHolder='%s'#NOTE!: MySQL PyODDBC seems to require this nonstardard coding
-    whc.Decode(encodedquery)
-    whc.CreateSelectStatement()
+    with DQXDbTools.DBCursor(returndata, databaseName, read_timeout=config.TIMEOUT) as cur:
+        whc=DQXDbTools.WhereClause()
+        whc.ParameterPlaceHolder='%s'#NOTE!: MySQL PyODDBC seems to require this nonstardard coding
+        whc.Decode(encodedquery)
+        whc.CreateSelectStatement()
 
 
-    #Determine total number of records
-    sqlquery="SELECT COUNT(*) FROM (SELECT * FROM {0}".format(DBTBESC(mytablename))
-    if len(whc.querystring_params) > 0:
-        sqlquery += " WHERE {0}".format(whc.querystring_params)
-    sqlquery += ' LIMIT '+str(maxrecordcount)
-    sqlquery += ') as tmp_table'
-    # DQXUtils.LogServer('   executing count query...')
-    tm = DQXUtils.Timer()
+        #Determine total number of records
+        sqlquery="SELECT COUNT(*) FROM (SELECT * FROM {0}".format(DBTBESC(mytablename))
+        if len(whc.querystring_params) > 0:
+            sqlquery += " WHERE {0}".format(whc.querystring_params)
+        sqlquery += ' LIMIT '+str(maxrecordcount)
+        sqlquery += ') as tmp_table'
+        # DQXUtils.LogServer('   executing count query...')
+        tm = DQXUtils.Timer()
 
-    if DQXDbTools.LogRequests:
-        DQXUtils.LogServer('################################################')
-        DQXUtils.LogServer('###QRY:'+sqlquery)
-        DQXUtils.LogServer('###PARAMS:'+str(whc.queryparams))
-        DQXUtils.LogServer('################################################')
-    cur.execute(sqlquery, whc.queryparams)
-    # DQXUtils.LogServer('   finished in {0}s'.format(tm.Elapsed()))
-    recordcount = cur.fetchone()[0]
-    returndata['TotalRecordCount'] = recordcount
-    if recordcount >= maxrecordcount:
-        returndata['Truncated'] = True
+        if DQXDbTools.LogRequests:
+            DQXUtils.LogServer('################################################')
+            DQXUtils.LogServer('###QRY:'+sqlquery)
+            DQXUtils.LogServer('###PARAMS:'+str(whc.queryparams))
+            DQXUtils.LogServer('################################################')
+        cur.execute(sqlquery, whc.queryparams)
+        # DQXUtils.LogServer('   finished in {0}s'.format(tm.Elapsed()))
+        recordcount = cur.fetchone()[0]
+        returndata['TotalRecordCount'] = recordcount
+        if recordcount >= maxrecordcount:
+            returndata['Truncated'] = True
 
-    cur.close()
-    db.close()
-
-    return returndata
+        return returndata

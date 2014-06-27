@@ -5,6 +5,8 @@
 import DQXDbTools
 from DQXDbTools import DBCOLESC
 from DQXDbTools import DBTBESC
+import config
+
 
 def response(returndata):
     mytablename=returndata['tbname']
@@ -17,30 +19,24 @@ def response(returndata):
     databaseName=None
     if 'database' in returndata:
         databaseName = returndata['database']
-    db = DQXDbTools.OpenDatabase(DQXDbTools.ParseCredentialInfo(returndata), databaseName)
-    cur = db.cursor()
+    with DQXDbTools.DBCursor(returndata, databaseName, read_timeout=config.TIMEOUT) as cur:
+        whc=DQXDbTools.WhereClause()
+        whc.ParameterPlaceHolder='%s'#NOTE!: MySQL PyODDBC seems to require this nonstardard coding
+        whc.Decode(encodedquery)
+        whc.CreateSelectStatement()
 
-    whc=DQXDbTools.WhereClause()
-    whc.ParameterPlaceHolder='%s'#NOTE!: MySQL PyODDBC seems to require this nonstardard coding
-    whc.Decode(encodedquery)
-    whc.CreateSelectStatement()
+        sqlquery="SELECT {0} FROM {1}".format(','.join([DBCOLESC(x['Name']) for x in mycolumns]), DBTBESC(mytablename))
+        if len(whc.querystring_params)>0:
+            sqlquery+=" WHERE {0}".format(whc.querystring_params)
+        sqlquery+=" ORDER BY {0}".format(DQXDbTools.CreateOrderByStatement(myorderfield, sortreverse))
 
-    sqlquery="SELECT {0} FROM {1}".format(','.join([DBCOLESC(x['Name']) for x in mycolumns]), DBTBESC(mytablename))
-    if len(whc.querystring_params)>0:
-        sqlquery+=" WHERE {0}".format(whc.querystring_params)
-    sqlquery+=" ORDER BY {0}".format(DQXDbTools.CreateOrderByStatement(myorderfield, sortreverse))
+        cur.execute(sqlquery, whc.queryparams)
 
-    cur.execute(sqlquery, whc.queryparams)
+        yield '\t'.join(str(col[0]) for col in cur.description)+'\n'
 
-    yield '\t'.join(str(col[0]) for col in cur.description)+'\n'
-
-    for row in cur.fetchall() :
-        line='\t'.join([str(x) for x in row])+'\n'
-        yield line
-
-    cur.close()
-    db.close()
-
+        for row in cur.fetchall() :
+            line='\t'.join([str(x) for x in row])+'\n'
+            yield line
 
 def handler(start_response, response):
         status = '200 OK'

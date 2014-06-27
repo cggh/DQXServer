@@ -21,7 +21,6 @@ class DbOperationType:
 
 # Encapsulates an operation that is done on a database entity
 class DbOperation:
-
     def __init__(self, operationType, databaseName, tableName=None, columnName=None):
         if (databaseName is None) or (databaseName == ''):
             databaseName = config.DB
@@ -107,37 +106,37 @@ class CredentialDatabaseException(CredentialException):
 
 # Encapsulates information about the credentials a user has
 class CredentialInformation:
-    def __init__(self):
+    def __init__(self, requestData=None):
         self.clientaddress = None
         self.userid = 'anonymous'
         self.groupids = []
 
-    def ParseFromReturnData(self, requestData):
-        if ('isRunningLocal' in requestData) and (requestData['isRunningLocal']):
-            self.userid = 'local'
-            return
+        if requestData:
+            if ('isRunningLocal' in requestData) and (requestData['isRunningLocal']):
+                self.userid = 'local'
+                return
 
-        if 'environ' not in requestData:
-            raise Exception('Data does not contain environment information')
-        environ = requestData['environ']
-        #print('ENV:'+str(environ))
+            if 'environ' not in requestData:
+                raise Exception('Data does not contain environment information')
+            environ = requestData['environ']
+            #print('ENV:'+str(environ))
 
-        if 'REMOTE_ADDR' in environ:
-            self.clientaddress = environ['REMOTE_ADDR']
-        if 'REMOTE_USER' in environ:
-            self.userid = environ['REMOTE_USER']
-        if 'HTTP_CAS_MEMBEROF' in environ:
-            cas_memberof = environ['HTTP_CAS_MEMBEROF'].strip('[]')
-            for groupStr in cas_memberof.split(';'):
-                groupStr = groupStr.strip(' ')
-                groupPath = []
-                for tokenStr in groupStr.split(','):
-                    tokenStr = tokenStr.strip(' ')
-                    tokenid = tokenStr.split('=')[0]
-                    tokencontent = tokenStr.split('=')[1]
-                    if (tokenid == 'cn') or (tokenid == 'ou') or (tokenid == 'dc'):
-                        groupPath.append(tokencontent)
-                self.groupids.append('.'.join(groupPath))
+            if 'REMOTE_ADDR' in environ:
+                self.clientaddress = environ['REMOTE_ADDR']
+            if 'REMOTE_USER' in environ:
+                self.userid = environ['REMOTE_USER']
+            if 'HTTP_CAS_MEMBEROF' in environ:
+                cas_memberof = environ['HTTP_CAS_MEMBEROF'].strip('[]')
+                for groupStr in cas_memberof.split(';'):
+                    groupStr = groupStr.strip(' ')
+                    groupPath = []
+                    for tokenStr in groupStr.split(','):
+                        tokenStr = tokenStr.strip(' ')
+                        tokenid = tokenStr.split('=')[0]
+                        tokencontent = tokenStr.split('=')[1]
+                        if (tokenid == 'cn') or (tokenid == 'ou') or (tokenid == 'dc'):
+                            groupPath.append(tokencontent)
+                    self.groupids.append('.'.join(groupPath))
 
 
     # operation is of type DbOperation
@@ -165,60 +164,75 @@ class CredentialInformation:
     def GetUserId(self):
         return self.userid
 
-# Create a credential info instance from a DQXServer request data environment
-def ParseCredentialInfo(requestData):
-    cred = CredentialInformation()
-    cred.ParseFromReturnData(requestData)
-    return cred
-
-def CreateOpenDatabaseArguments():
-    args = {
-        'host': config.DBSRV,
-        'charset': 'utf8',
-    }
-    try:
-        if (len(config.DBUSER) > 0):
-            args['user'] = config.DBUSER
-            try:
-                if len(config.DBPASS) > 0:
-                    args['passwd'] = config.DBPASS #try to add password
-            except:
-                pass
-    except:
-        args['read_default_file'] = '~/.my.cnf'
-
-    return args
-
-def OpenDatabase(credInfo, database=None, **kwargs):
-    if (database is None) or (database == ''):
-        database = config.DB
-    credInfo.VerifyCanDo(DbOperationRead(database))
-
-    args = CreateOpenDatabaseArguments()
-    args['db'] = database
-    args.update(kwargs)
-    return MySQLdb.connect(**args)
-
-def OpenNoDatabase(credInfo, **kwargs):
-    args = CreateOpenDatabaseArguments()
-    args.update(kwargs)
-    return MySQLdb.connect(**args)
-
 class Timeout(Exception):
     pass
 
-def execute_with_timeout_detection(cur, timeout, query, params):
-    t = time.time()
-    try:
-        return cur.execute(query, params)
-    except MySQLdb.OperationalError as e:
-        if e[0] == 2013: #Check specific error code (Lost connection)
-            #As the MYSQL API doesn't tell us this is a timeout or not we guess based on the fact that the exception was raised just when we expect it to.... yeah I know.
-            duration = (time.time() - t)
-            #Give 50ms grace in either dir
-            if (duration > timeout - 0.05) and (duration < timeout + 0.05):
-                raise Timeout()
-        raise e
+class DBCursor(object):
+    def __init__(self, cred_data_or_cred=None, db=None, **kwargs):
+        self.db_args = {
+            'host': config.DBSRV,
+            'charset': 'utf8',
+        }
+        if hasattr(config, 'DBUSER') and hasattr(config, 'DBPASS'):
+            self.db_args['user'] = config.DBUSER
+            self.db_args['passwd'] = config.DBPASS
+        else:
+            self.db_args['read_default_file'] = '~/.my.cnf'
+        self.db_args['db'] = db or config.DB
+        self.db_args.update(kwargs)
+
+        if type(cred_data_or_cred) == type(CredentialInformation()):
+            self.credentials = cred_data_or_cred
+        else:
+            self.credentials = CredentialInformation(cred_data_or_cred)
+        self.db = None
+        self.cursor = None
+        self.conn_id = None
+
+    def __enter__(self):
+        self.credentials.VerifyCanDo(DbOperationRead(self.db_args['db']))
+        self.db = MySQLdb.connect(**self.db_args)
+        if self.db_args.get('autocommit', False):
+            self.db.autocommit(True)
+        self.cursor = self.db.cursor()
+        self.cursor.execute("SELECT CONNECTION_ID();")
+        self.conn_id = self.cursor.fetchall()[0][0]
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.cursor.close()
+        self.db.close()
+
+    def execute(self, query, params=None):
+        if 'read_timeout' not in self.db_args:
+            return self.cursor.execute(query, params)
+        else:
+            timeout = self.db_args['read_timeout']
+            t = time.time()
+            try:
+                return self.cursor.execute(query, params)
+            except MySQLdb.OperationalError as e:
+                if e[0] == 2013: #Check specific error code (Lost connection)
+                    #As the MYSQL API doesn't tell us this is a timeout or not we
+                    #guess based on the fact that the exception was raised just
+                    # when we expect it to be.... yeah I know.
+                    duration = (time.time() - t)
+                    #Re-connect and kill the query
+                    self.db = MySQLdb.connect(**self.db_args)
+                    self.cursor = self.db.cursor()
+                    self.cursor.execute("KILL %s", (self.conn_id,))
+                    #Give 50ms grace in either dir
+                    if (duration > timeout - 0.05) and (duration < timeout + 0.05):
+                        raise Timeout
+
+                raise e
+
+    def commit(self):
+        self.db.commit()
+
+    def __getattr__(self, attrname):
+        return getattr(self.cursor, attrname)   # Delegate to actual cursor
+
 
 def ToSafeIdentifier(st):
     st = str(st)
