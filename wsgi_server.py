@@ -68,8 +68,8 @@ def application(environ, start_response):
     else:
     #Default is to respond with JSON
         del response['environ']
+        status = response.get('http_status', '200 OK')
         response = simplejson.dumps(response, use_decimal=True)
-        status = '200 OK'
         response_headers = [('Content-type', 'application/json'),
                             ('Content-Length', str(len(response)))]
         start_response(status, response_headers)

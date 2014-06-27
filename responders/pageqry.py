@@ -6,7 +6,7 @@ import B64
 import DQXDbTools
 import DQXUtils
 
-
+TIMEOUT = 30
 
 def response(returndata):
 
@@ -21,7 +21,8 @@ def response(returndata):
     databaseName=None
     if 'database' in returndata:
         databaseName = returndata['database']
-    db = DQXDbTools.OpenDatabase(DQXDbTools.ParseCredentialInfo(returndata), databaseName)
+    db = DQXDbTools.OpenDatabase(DQXDbTools.ParseCredentialInfo(returndata), databaseName,
+                                 read_timeout=TIMEOUT)
     cur = db.cursor()
 
     whc=DQXDbTools.WhereClause()
@@ -67,7 +68,14 @@ def response(returndata):
         DQXUtils.LogServer('################################################')
 
 
-    cur.execute(sqlquery,whc.queryparams)
+    try:
+        DQXDbTools.execute_with_timeout_detection(cur, TIMEOUT, sqlquery, whc.queryparams)
+    except DQXDbTools.Timeout:
+        cur.close()
+        db.close()
+        returndata['http_status'] = '504 Gateway Timeout'
+        return returndata
+
 
     returndata['DataType']='Points'
     pointsx=[]

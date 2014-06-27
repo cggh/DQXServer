@@ -7,6 +7,7 @@ import simplejson
 import DQXbase64
 import MySQLdb
 import config
+import time
 
 # Enumerates types of actions that can be done on a database entity
 class DbOperationType:
@@ -160,23 +161,16 @@ class CredentialInformation:
     def GetUserId(self):
         return self.userid
 
-
-
 # Create a credential info instance from a DQXServer request data environment
 def ParseCredentialInfo(requestData):
     cred = CredentialInformation()
     cred.ParseFromReturnData(requestData)
     return cred
 
-
-
-
-
-
 def CreateOpenDatabaseArguments():
     args = {
         'host': config.DBSRV,
-        'charset': 'utf8'
+        'charset': 'utf8',
     }
     try:
         if (len(config.DBUSER) > 0):
@@ -191,19 +185,36 @@ def CreateOpenDatabaseArguments():
 
     return args
 
-def OpenDatabase(credInfo, database=None):
+def OpenDatabase(credInfo, database=None, **kwargs):
     if (database is None) or (database == ''):
         database = config.DB
     credInfo.VerifyCanDo(DbOperationRead(database))
 
     args = CreateOpenDatabaseArguments()
     args['db'] = database
+    args.update(kwargs)
     return MySQLdb.connect(**args)
 
-def OpenNoDatabase(credInfo):
+def OpenNoDatabase(credInfo, **kwargs):
     args = CreateOpenDatabaseArguments()
+    args.update(kwargs)
     return MySQLdb.connect(**args)
 
+class Timeout(Exception):
+    pass
+
+def execute_with_timeout_detection(cur, timeout, query, params):
+    t = time.time()
+    try:
+        return cur.execute(query, params)
+    except MySQLdb.OperationalError as e:
+        if e[0] == 2013: #Check specific error code (Lost connection)
+            #As the MYSQL API doesn't tell us this is a timeout or not we guess based on the fact that the exception was raised just when we expect it to.... yeah I know.
+            duration = (time.time() - t)
+            #Give 50ms grace in either dir
+            if (duration > timeout - 0.05) and (duration < timeout + 0.05):
+                raise Timeout()
+        raise e
 
 def ToSafeIdentifier(st):
     st = str(st)
