@@ -29,20 +29,20 @@ def application(environ, start_response):
         start_response(status, [])
         yield ''
         return
-    returndata = dict((k,v[0]) for k,v in parse_qs(environ['QUERY_STRING']).items())
-    if 'datatype' not in returndata:
+    request_data = dict((k,v[0]) for k,v in parse_qs(environ['QUERY_STRING']).items())
+    if 'datatype' not in request_data:
         DQXUtils.LogServer('--> request does not contain datatype')
         start_response('404 NOT FOUND', [('Content-Type', 'text/plain')])
         yield 'Not found: request does not contain datatype'
         return
 
-    request_type = returndata['datatype']
+    request_type = request_data['datatype']
 
     tm = DQXUtils.Timer()
 
     if request_type == 'custom':
-        request_custommodule = returndata['respmodule']
-        request_customid = returndata['respid']
+        request_custommodule = request_data['respmodule']
+        request_customid = request_data['respid']
         responder = importlib.import_module('customresponders.' + request_custommodule + '.' + request_customid)
     else:
         try:
@@ -52,13 +52,20 @@ def application(environ, start_response):
             raise Exception("Unknown request {0}".format(request_type))
 
 
-    returndata['environ'] = environ
+    request_data['environ'] = environ
+    response = request_data
     try:
-        response = responder.response(returndata)
+        response = responder.response(request_data)
+        status = '200 OK'
     except DQXDbTools.CredentialException as e:
         print('CREDENTIAL EXCEPTION: '+str(e))
-        response = returndata
         response['Error'] = 'Credential problem: ' + str(e)
+        #Really should be 403 - but I think the JS will break as it expects 200
+        #status = '403 Forbidden'
+        status = '200 OK'
+    except DQXDbTools.Timeout as e:
+        status = '504 Gateway Timeout'
+
 
     #Check for a custom response (eg in downloadtable)
     if 'handler' in dir(responder):
@@ -68,7 +75,6 @@ def application(environ, start_response):
     else:
     #Default is to respond with JSON
         del response['environ']
-        status = response.get('http_status', '200 OK')
         response = simplejson.dumps(response, use_decimal=True)
         response_headers = [('Content-type', 'application/json'),
                             ('Content-Length', str(len(response)))]

@@ -6,18 +6,19 @@ import DQXDbTools
 import uuid
 
 #Find hits for gene patterns (or similar searches)
+import config
+
+
 def response(returndata):
-
     id = returndata['id']
-    db = DQXDbTools.OpenDatabase(DQXDbTools.ParseCredentialInfo(returndata))
-    cur = db.cursor()
-    sqlstring = 'SELECT content FROM storage WHERE id="{0}"'.format(id)
-    cur.execute(sqlstring)
+    with DQXDbTools.DBCursor(returndata, databaseName) as cur:
+        sqlstring = 'SELECT content FROM storage WHERE id="{0}"'.format(id)
+        cur.execute(sqlstring)
 
-    therow = cur.fetchone()
-    if therow is None:
-        returndata['Error'] = 'Storage record not found'
-    else:
-        returndata['content'] = therow[0]
+        therow = cur.fetchone()
+        if therow is None:
+            returndata['Error'] = 'Storage record not found'
+        else:
+            returndata['content'] = therow[0]
 
-    return returndata
+        return returndata

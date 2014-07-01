@@ -41,93 +41,91 @@ def response(returndata):
     hasSubFeatures = (returndata['subfeatures']=='1') and ('fsubtype' in returndata)
 
 
-    db = DQXDbTools.OpenDatabase(DQXDbTools.ParseCredentialInfo(returndata), databaseName)
-    cur = db.cursor()
+    with DQXDbTools.DBCursor(returndata, databaseName, read_timeout=config.TIMEOUT) as cur:
+        tablename=DQXDbTools.ToSafeIdentifier(returndata['table'])
 
-    tablename=DQXDbTools.ToSafeIdentifier(returndata['table'])
+        typequerystring='(true)'
+        queryparams = []
+        if hasFeatureType:
+            typequerystring = ' OR '.join(['(ftype="{0}")'.format(item) for item in returndata['ftype'].split(',')])
+        if hasSubFeatures:
+            typequerystring += ' or (ftype="{1}")'.format(returndata['ftype'], returndata['fsubtype'])
 
-    typequerystring='(true)'
-    queryparams = []
-    if hasFeatureType:
-        typequerystring = ' OR '.join(['(ftype="{0}")'.format(item) for item in returndata['ftype'].split(',')])
-    if hasSubFeatures:
-        typequerystring += ' or (ftype="{1}")'.format(returndata['ftype'], returndata['fsubtype'])
-
-    if 'qry' in returndata:
-        encodedquery = returndata['qry']
-        whc=DQXDbTools.WhereClause()
-        whc.ParameterPlaceHolder='%s'#NOTE!: MySQL PyODDBC seems to require this nonstardard coding
-        whc.Decode(encodedquery)
-        whc.CreateSelectStatement()
-        if len(whc.querystring_params) > 0:
-            typequerystring = whc.querystring_params
-            queryparams = whc.queryparams
+        if 'qry' in returndata:
+            encodedquery = returndata['qry']
+            whc=DQXDbTools.WhereClause()
+            whc.ParameterPlaceHolder='%s'#NOTE!: MySQL PyODDBC seems to require this nonstardard coding
+            whc.Decode(encodedquery)
+            whc.CreateSelectStatement()
+            if len(whc.querystring_params) > 0:
+                typequerystring = whc.querystring_params
+                queryparams = whc.queryparams
 
 
-    statement = 'SELECT {field_start}, {field_stop}, {field_name}, {field_id},'.format(
-        field_start=field_start,
-        field_stop=field_stop,
-        field_name=field_name,
-        field_id=field_id
-    )
+        statement = 'SELECT {field_start}, {field_stop}, {field_name}, {field_id},'.format(
+            field_start=field_start,
+            field_stop=field_stop,
+            field_name=field_name,
+            field_id=field_id
+        )
 
-    if hasFeatureType:
-        statement +=' ftype, fparentid'
-    else:
-        statement +=' "_" as ftype, "_" as fparentid'
+        if hasFeatureType:
+            statement +=' ftype, fparentid'
+        else:
+            statement +=' "_" as ftype, "_" as fparentid'
 
-    if hasExtraField1:
-        statement +=', ' + extrafield1
-
-
-    statement += ' FROM {tablename} WHERE ({typequery}) and ({field_chrom}="{chromid}") and ({field_stop}>={start}) and ({field_start}<={stop}) ORDER BY {field_start}'.format(
-        typequery=typequerystring,
-        tablename=tablename,
-        chromid=DQXDbTools.ToSafeIdentifier(returndata['chrom']),
-        start=str(int(returndata['start'])),
-        stop=str(int(returndata['stop'])),
-        field_chrom=field_chrom,
-        field_start=field_start,
-        field_stop=field_stop
-    )
-
-    # print('==============ANNOT====== ')
-    # print(str(returndata))
-    # print(statement)
-    # print('========================= ')
-
-    # DQXUtils.LogServer(statement+'\n')
-
-    cur.execute(statement, queryparams)
-    starts = []
-    stops = []
-    names = []
-    ids = []
-    types = []
-    parentids = []
-    extrafield1 = []
-    for row in cur.fetchall():
-        starts.append(float(row[0]))
-        stops.append(float(row[1]))
-        name=row[2]
-        id=row[3]
-        tpe=row[4]
-        parentid=row[5]
-        names.append(name)
-        ids.append(id)
-        types.append(tpe)
-        parentids.append(parentid)
         if hasExtraField1:
-            extrafield1.append(row[6])
+            statement +=', ' + extrafield1
 
-    returndata['DataType']='Points'
-    valcoder=B64.ValueListCoder()
-    returndata['Starts'] = valcoder.EncodeIntegersByDifferenceB64(starts)
-    returndata['Sizes'] = valcoder.EncodeIntegers([x[1]-x[0] for x in zip(starts,stops)])
-    returndata['Names'] = valcoder.EncodeStrings(names)
-    returndata['IDs'] = valcoder.EncodeStrings(ids)
-    returndata['Types'] = valcoder.EncodeStrings(types)
-    returndata['ParentIDs'] = valcoder.EncodeStrings(parentids)
-    if hasExtraField1:
-        returndata['ExtraField1'] = valcoder.EncodeStrings(extrafield1)
-    return returndata
+
+        statement += ' FROM {tablename} WHERE ({typequery}) and ({field_chrom}="{chromid}") and ({field_stop}>={start}) and ({field_start}<={stop}) ORDER BY {field_start}'.format(
+            typequery=typequerystring,
+            tablename=tablename,
+            chromid=DQXDbTools.ToSafeIdentifier(returndata['chrom']),
+            start=str(int(returndata['start'])),
+            stop=str(int(returndata['stop'])),
+            field_chrom=field_chrom,
+            field_start=field_start,
+            field_stop=field_stop
+        )
+
+        # print('==============ANNOT====== ')
+        # print(str(returndata))
+        # print(statement)
+        # print('========================= ')
+
+        # DQXUtils.LogServer(statement+'\n')
+
+        cur.execute(statement, queryparams)
+        starts = []
+        stops = []
+        names = []
+        ids = []
+        types = []
+        parentids = []
+        extrafield1 = []
+        for row in cur.fetchall():
+            starts.append(float(row[0]))
+            stops.append(float(row[1]))
+            name=row[2]
+            id=row[3]
+            tpe=row[4]
+            parentid=row[5]
+            names.append(name)
+            ids.append(id)
+            types.append(tpe)
+            parentids.append(parentid)
+            if hasExtraField1:
+                extrafield1.append(row[6])
+
+        returndata['DataType']='Points'
+        valcoder=B64.ValueListCoder()
+        returndata['Starts'] = valcoder.EncodeIntegersByDifferenceB64(starts)
+        returndata['Sizes'] = valcoder.EncodeIntegers([x[1]-x[0] for x in zip(starts,stops)])
+        returndata['Names'] = valcoder.EncodeStrings(names)
+        returndata['IDs'] = valcoder.EncodeStrings(ids)
+        returndata['Types'] = valcoder.EncodeStrings(types)
+        returndata['ParentIDs'] = valcoder.EncodeStrings(parentids)
+        if hasExtraField1:
+            returndata['ExtraField1'] = valcoder.EncodeStrings(extrafield1)
+        return returndata

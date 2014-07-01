@@ -6,6 +6,7 @@ import DQXDbTools
 import DQXUtils
 from DQXDbTools import DBCOLESC
 from DQXDbTools import DBTBESC
+import config
 
 def response(returndata):
     mytablename = returndata['tbname']
@@ -14,36 +15,34 @@ def response(returndata):
     databaseName = None
     if 'database' in returndata:
         databaseName = returndata['database']
-    db = DQXDbTools.OpenDatabase(DQXDbTools.ParseCredentialInfo(returndata), databaseName)
-    cur = db.cursor()
+    with DQXDbTools.DBCursor(returndata, databaseName, read_timeout=config.TIMEOUT) as cur:
+        whc = DQXDbTools.WhereClause()
+        whc.ParameterPlaceHolder = '%s' #NOTE!: MySQL PyODDBC seems to require this nonstardard coding
+        whc.Decode(encodedquery)
+        whc.CreateSelectStatement()
 
-    whc = DQXDbTools.WhereClause()
-    whc.ParameterPlaceHolder = '%s' #NOTE!: MySQL PyODDBC seems to require this nonstardard coding
-    whc.Decode(encodedquery)
-    whc.CreateSelectStatement()
+        sqlquery = "SELECT * FROM {0} WHERE {1}".format(
+            DBTBESC(mytablename),
+            whc.querystring_params
+        )
 
-    sqlquery = "SELECT * FROM {0} WHERE {1}".format(
-        DBTBESC(mytablename),
-        whc.querystring_params
-    )
-
-    if DQXDbTools.LogRequests:
-        DQXUtils.LogServer('################################################')
-        DQXUtils.LogServer('###QRY:'+sqlquery)
-        DQXUtils.LogServer('###PARAMS:'+str(whc.queryparams))
-        DQXUtils.LogServer('################################################')
+        if DQXDbTools.LogRequests:
+            DQXUtils.LogServer('################################################')
+            DQXUtils.LogServer('###QRY:'+sqlquery)
+            DQXUtils.LogServer('###PARAMS:'+str(whc.queryparams))
+            DQXUtils.LogServer('################################################')
 
 
-    cur.execute(sqlquery, whc.queryparams)
-    therow = cur.fetchone()
-    if therow is None:
-        returndata['Error'] = 'Record not found'
-    else:
-        data={}
-        colnr=0
-        for column in cur.description:
-            data[column[0]] = str(therow[colnr])
-            colnr += 1
-        returndata['Data'] = data
+        cur.execute(sqlquery, whc.queryparams)
+        therow = cur.fetchone()
+        if therow is None:
+            returndata['Error'] = 'Record not found'
+        else:
+            data={}
+            colnr=0
+            for column in cur.description:
+                data[column[0]] = str(therow[colnr])
+                colnr += 1
+            returndata['Data'] = data
 
-    return returndata
+        return returndata
