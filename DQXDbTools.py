@@ -10,7 +10,7 @@ import config
 import time
 
 
-LogRequests = False
+LogRequests = True
 
 
 # Enumerates types of actions that can be done on a database entity
@@ -281,7 +281,7 @@ class WhereClause:
 
     def _CreateSelectStatementSub_Comparison(self, statm):
         #TODO: check that statm['ColName'] corresponds to a valid column name in the table (to avoid SQL injection)
-        if not(statm['Tpe'] in ['=', '<>', '<', '>', '<=', '>=', '!=', 'LIKE', 'CONTAINS', 'NOTCONTAINS', 'STARTSWITH', 'ISPRESENT', 'ISABSENT', '=FIELD', '<>FIELD', '<FIELD', '>FIELD', 'between', 'ISEMPTYSTR', 'ISNOTEMPTYSTR']):
+        if not(statm['Tpe'] in ['=', '<>', '<', '>', '<=', '>=', '!=', 'LIKE', 'CONTAINS', 'NOTCONTAINS', 'STARTSWITH', 'ISPRESENT', 'ISABSENT', '=FIELD', '<>FIELD', '<FIELD', '>FIELD', 'between', 'ISEMPTYSTR', 'ISNOTEMPTYSTR', '_subset_']):
             raise Exception("Invalid comparison statement {0}".format(statm['Tpe']))
 
         processed = False
@@ -353,6 +353,17 @@ class WhereClause:
             self.querystring_params += '{0} between {1} and {1}'.format(DBCOLESC(statm['ColName']), self.ParameterPlaceHolder)
             self.queryparams.append(ToSafeIdentifier(statm["CompValueMin"]))
             self.queryparams.append(ToSafeIdentifier(statm["CompValueMax"]))
+
+        if statm['Tpe'] == '_subset_':
+            processed = True
+            querystr = '{primkey} IN (SELECT {primkey} FROM {subsettable} WHERE subsetid={subsetid})'.format(
+                primkey=DBCOLESC(statm['PrimKey']),
+                subsettable=DBTBESC(statm['SubsetTable']),
+                subsetid=statm['Subset']
+            )
+            #querystr = 'True'
+            self.querystring += querystr
+            self.querystring_params += querystr
 
         if not(processed):
             decoval = statm['CompValue']

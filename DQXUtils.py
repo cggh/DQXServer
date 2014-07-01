@@ -30,7 +30,7 @@ identifierMatcher = re.compile(r"^[^\d\W][\w]*\Z")
 #    if not re.match("[_A-Za-z][_a-zA-Z0-9 ]*$", id):
 
 # TODO: this should be moved to Panoptes, as this is app specific
-reservedTableNames = ['2D_propertycatalog', '2D_tablecatalog', 'annotation', 'chromosomes', 'externallinks', 'propertycatalog', 'relations', 'settings', 'storedqueries', 'summaryvalues', 'tablebasedsummaryvalues', 'tablecatalog', 'workspaces']
+reservedTableNames = ['2D_propertycatalog', '2D_tablecatalog', 'annotation', 'chromosomes', 'externallinks', 'propertycatalog', 'relations', 'settings', 'storedqueries', 'storedsubsets', 'summaryvalues', 'tablebasedsummaryvalues', 'tablecatalog', 'workspaces']
 
 def CheckValidDatabaseIdentifier(id):
     if re.match(identifierMatcher, id) is None:
