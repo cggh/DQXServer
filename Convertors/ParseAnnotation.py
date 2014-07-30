@@ -1,12 +1,26 @@
 from DQXTableUtils import VTTable
 import sys
+import urllib
+
+
+def appendfeatproperty(feat, prop, value):
+    value = urllib.unquote_plus(value)
+    if len(value) > 0:
+        if len(feat[prop]) > 0:
+            feat[prop] += ';'
+        feat[prop] += value
 
 
 class GFFParser:
     def __init__(self):
-        self.targetfeaturelist=['gene', 'pseudogene']
-        self.features=[]
-        self.exonid='exon'
+        self.maxrowcount = -1
+        self.targetfeaturelist = ['gene', 'pseudogene']
+        self.features = []
+        self.exonid = 'exon'
+        self.attriblist_name = []
+        self.attriblist_names = []
+        self.attriblist_descr = []
+
 
     def GetParentFeature(self,feat):
         parentid=feat['parentid']
@@ -19,7 +33,19 @@ class GFFParser:
         #print(idx)
         return self.features[idx]
 
+
+    def printSettings(self):
+        print('Max count: '+str(self.maxrowcount))
+        print('Gene Ids: '+str(self.targetfeaturelist))
+        print('Exon Id: '+self.exonid)
+        print('Name attributes: ' + ','.join(self.attriblist_name))
+        print('Names attributes: ' + ','.join(self.attriblist_names))
+        print('Description attributes: ' + ','.join(self.attriblist_descr))
+
+
     def parseGTF(self,filelist):
+        print('PARSING GTF')
+        self.printSettings()
         #read the feature list
         self.features=[]
         self.featindex={}
@@ -27,14 +53,18 @@ class GFFParser:
         for filename in filelist:
             print('processing file '+filename)
             f=open(filename,'r')
+            filerownr = 0
             for line in f.readlines():
-#                if len(self.features)>20000: break#!!!
+                if (self.maxrowcount > 0) and (filerownr > self.maxrowcount):
+                    break
+                filerownr += 1
                 line=line.rstrip('\n')
                 if line[0]!='#':
                     parts=line.split('\t')
                     feattype=parts[2]
-                    if (feattype=='CDS') or (feattype==self.exonid):
-                        if len(self.features)%1000==0: print('read: '+str(len(self.features)))
+                    if (feattype in self.targetfeaturelist) or (feattype==self.exonid):
+                        if len(self.features)%1000==0:
+                            print('read: '+str(len(self.features)))
                         feat={}
                         feat['nr']=len(self.features)
                         feat['children']=[]
@@ -52,30 +82,27 @@ class GFFParser:
                         for attribstr in attribs:
                             attribstr=attribstr.lstrip()
                             attribstr=attribstr.rstrip()
-                            #                            prt=attribstr.partition(' "')
                             key,sp,value=attribstr.partition(' "')
-                            value=value[:-1]
-                            if feattype == 'CDS':
+                            value = value[:-1]
+                            if feattype in self.targetfeaturelist:
                                 if key == 'gene_id':
                                     feat['id'] = value
-                                if key == 'gene_name':
-                                    feat['name'] += ' '+value
-                                if key == 'description':
-                                    feat['name'] += ' '+value
-                                if key == 'Alias':
-                                    print('alias: '+value)
-                                feat['type'] = 'gene'
+                                if key in self.attriblist_name:
+                                    appendfeatproperty(feat, 'name', value)
+                                if key in self.attriblist_names:
+                                    appendfeatproperty(feat, 'names', value)
+                                if key in self.attriblist_descr:
+                                    appendfeatproperty(feat, 'descr', value)
                             else:
                                 if key == 'gene_id':
                                     feat['parentid'] = value
-#                        if feattype == 'exon':
-#                            feat['type'] = 'CDS'
-#                        print('==='+str(feat))
                         self.features.append(feat)
             f.close()
 
 
     def parseGFF(self,filelist):
+        print('PARSING GFF')
+        self.printSettings()
         #read the feature list
         self.features=[]
         tokenMap = {}
@@ -83,7 +110,12 @@ class GFFParser:
             print('processing file '+filename)
             annotationreading=False
             f=open(filename,'r')
+            filerownr = 0
             for line in f.readlines():
+                if (self.maxrowcount > 0) and (filerownr > self.maxrowcount):
+                    break
+                if annotationreading:
+                    filerownr += 1
                 line=line.rstrip('\n')
                 if line=='##gff-version 3' or line=='##gff-version\t3':
                     annotationreading=True
@@ -93,7 +125,6 @@ class GFFParser:
                     print(line)
                 if (line[0]!='#') and (annotationreading):
                     parts=line.split('\t')
-                    print('='+str(parts))
                     feat={}
                     feat['children']=[]
                     feat['seqid']=parts[0]
@@ -114,19 +145,15 @@ class GFFParser:
                                 feat['id'] = value
                             if key == 'Parent':
                                 feat['parentid'] = value
-                            if key == 'Name':
-                                feat['name'] += value
-                                feat['names'] += value
-                            if key == 'description':
-                                feat['descr'] = value
-                            if key == 'Alias':
-                                if len(feat['names']) > 0:
-                                    feat['names'] +=','
-                                feat['names'] += value
-                            if key =='previous_systematic_id':
-                                if len(feat['names']) > 0:
-                                    feat['names'] +=','
-                                feat['names'] += value
+
+                            if key in self.attriblist_name:
+                                appendfeatproperty(feat, 'name', value)
+                            if key in self.attriblist_names:
+                                appendfeatproperty(feat, 'names', value)
+                            if key in self.attriblist_descr:
+                                appendfeatproperty(feat, 'descr', value)
+
+
                     if len(feat['names']) > 200:
                         feat['names'] = feat['names'][0:195]+'...'
                     if len(feat['descr']) > 200:
@@ -144,7 +171,7 @@ class GFFParser:
         while featnr<len(self.features):
             feat=self.features[featnr]
             key=feat['seqid']+feat['id']
-            if (feat['type']==self.targetfeaturelist) and (key in dind):
+            if (key in dind):
                 origfeat=self.features[dind[key]]
                 origfeat['start']=min(origfeat['start'],feat['start'])
                 origfeat['end']=max(origfeat['end'],feat['end'])
@@ -159,9 +186,10 @@ class GFFParser:
             #Build an index
         self.featindex={}
         for feat in self.features:
-            if feat['id'] in self.featindex:
-                raise Exception('Duplicate feature')
-            self.featindex[feat['seqid']+feat['id']]=feat['nr']
+            featid = feat['seqid']+feat['id']
+            if featid in self.featindex:
+                raise Exception('Duplicate feature: '+str(feat))
+            self.featindex[featid]=feat['nr']
 
         #extending genes with exon regions
         print('extending')
@@ -171,10 +199,10 @@ class GFFParser:
                 parentfeat=self.GetParentFeature(myfeat)
                 if parentfeat!=None:
                     if parentfeat['end']<feat['end']:
-                        print('Right extending {0} from {1} to {2}'.format(parentfeat['id'],parentfeat['end'],feat['end']))
+#                        print('Right extending {0} from {1} to {2}'.format(parentfeat['id'],parentfeat['end'],feat['end']))
                         parentfeat['end']=feat['end']
                     if parentfeat['start']>feat['start']:
-                        print('Left extending {0} from {1} to {2}'.format(parentfeat['id'],parentfeat['start'],feat['start']))
+#                        print('Left extending {0} from {1} to {2}'.format(parentfeat['id'],parentfeat['start'],feat['start']))
                         parentfeat['start']=feat['start']
 
 
@@ -187,11 +215,6 @@ class GFFParser:
                 myparent['children'].append(feat)
                 myfeat=myparent
             myparent=self.GetParentFeature(feat)
-
-        # A hack for GTF files !!!
-#        for feat in self.features:
-#            if feat['type'] == 'exon':
-#                feat['type'] = 'CDS'
 
     def save(self,filename):
         print('saving')
@@ -208,7 +231,7 @@ class GFFParser:
                 f.write(str(feat['end'])+'\t')
                 f.write(feat['id']+'\t')
                 f.write(''+'\t')
-                f.write(feat['type']+'\t')
+                f.write('gene'+'\t')
                 f.write(feat['name']+'\t')
                 f.write(feat['names']+'\t')
                 f.write(feat['descr'])
@@ -220,7 +243,7 @@ class GFFParser:
                         f.write(str(child['end'])+'\t')
                         f.write(child['id']+'\t')
                         f.write(feat['id']+'\t')
-                        f.write('CDS'+'\t') # a hack for GTF !!!
+                        f.write('CDS'+'\t') #CDS is the internally used identifier for an exon
                         f.write(child['name']+'\t\t\t')
                         f.write('\n')
         f.close()
@@ -249,23 +272,43 @@ basepath = '.'
 
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
 if False:
-    basepath = '/home/pvaut/Documents/Genome/SourceData/datasets/PfCrosses/refgenome'
-    sys.argv = ['', 'annotation.gff']
+    basepath = '/home/pvaut/Documents/Genome/SourceData/datasets/Samples_and_Variants/refgenome'
+#    sys.argv = ['', '10000', 'GTF', 'CDS', 'exon', 'gene_name', 'gene_name', 'description', 'annotation.gff']
+    sys.argv = ['', 'all', 'GFF', 'gene,pseudogene', 'exon', 'Name', 'Name,Alias,previous_systematic_id', 'descr', 'annotation.gff']
 #============= END OF FAKE STUFF ============================================
 
 
-if len(sys.argv)<2:
-    print('Usage: COMMAND GFFFileName')
+if len(sys.argv)<9:
+    print('Usage: COMMAND maxrowcount format geneidlist exonid attrib_genename attrib_genenames, attrib_descr GFFFileName')
     sys.exit()
 
-sourcefile = sys.argv[1]
+arg_maxrowcount = sys.argv[1]
+arg_format = sys.argv[2]
+arg_geneidlist = sys.argv[3]
+arg_exonid = sys.argv[4]
+arg_attrib_genename = sys.argv[5]
+arg_attriblist_genenames = sys.argv[6]
+arg_attrib_descr = sys.argv[7]
+sourcefile = sys.argv[8]
 
+if arg_format not in ['GFF', 'GTF']:
+    raise Exception('Invalid format specifier (should be GFF or GTF): '+arg_format)
 
 filelist=['{0}/{1}'.format(basepath,sourcefile)]
 parser=GFFParser()
-#parser.targetfeaturelist=['gene','mRNA']
-#parser.targetfeaturelist=['repeat_region','pseudogene','snRNA','tRNA','centromere','pseudogenic_exon','pseudogenic_transcript','rRNA','snoRNA','polypeptide_motif','ncRNA']
-parser.parseGTF(filelist)
+if arg_maxrowcount!='all':
+    parser.maxrowcount = int(arg_maxrowcount)
+parser.targetfeaturelist = arg_geneidlist.split(',')
+parser.exonid = arg_exonid
+
+parser.attriblist_name = arg_attrib_genename.split(',')
+parser.attriblist_names = arg_attriblist_genenames.split(',')
+parser.attriblist_descr = arg_attrib_descr.split(',')
+
+if arg_format == 'GTF':
+    parser.parseGTF(filelist)
+else:
+    parser.parseGFF(filelist)
 parser.Process()
 parser.save('{0}/annotation.txt'.format(basepath))
 
@@ -274,9 +317,6 @@ tb.allColumnsText = True
 tb.LoadFile(basepath+'/annotation.txt')
 tb.ConvertColToValue('fstart')
 tb.ConvertColToValue('fstop')
-#tb.CalcCol('fnames', lambda x: x, 'fname')
-#tb.CalcCol('descr', lambda: '')
-#tb.CalcCol('strand', lambda: '')
 print('DD>')
 tb.PrintRows(0,19)
 print('<DD')
