@@ -19,8 +19,8 @@ if False:
 #============= END OF FAKE STUFF ============================================
 
 
-if len(sys.argv)<7:
-    print('Usage: COMMAND datafile minval maxval blockSizeStart blockSizeIncrFactor blockSizeMax')
+if len(sys.argv)<8:
+    print('Usage: COMMAND datafile minval maxval blockSizeStart blockSizeIncrFactor blockSizeMax maxrowcount')
     print('   datafile: format: chromosome\\tposition\\tvalue (no header)')
     sys.exit()
 
@@ -30,6 +30,7 @@ maxval = float(sys.argv[3])
 blockSizeStart = int(sys.argv[4])
 blockSizeIncrFactor = int(sys.argv[5])
 blockSizeMax = int(sys.argv[6])
+maxrowcount = int(sys.argv[7])
 
 class Level:
     def __init(self):
@@ -185,6 +186,8 @@ while True:
         linecount += 1
         if linecount % 500000 ==0:
             print(str(linecount))
+    if (maxrowcount > 0) and (linecount > maxrowcount):
+        break
     comps = line.split('\t')
     chromosome = comps[0]
     pos = int(comps[1])
@@ -207,4 +210,4 @@ while True:
 if summariser != None:
     summariser.Finalise()
 
-print(str(linecount))
+print('Lines processed: '+str(linecount))
