@@ -6,20 +6,27 @@ import sys
 import os
 import simplejson
 
-basedir='.'
+basedir = '.'
+maxbasecount = -1
 
 #============= FAKE STUFF FOR DEBUGGING; REMOVE FOR PRODUCTION ==============
 if False:
-    basedir='/Users/pvaut/Documents/Data/Genome/Ag'
-    sys.argv=['','Anopheles-gambiae-PEST_CHROMOSOMES_AgamP3.fa']
+    basedir = '/home/pvaut/Documents/Genome/SourceData/datasets/PGV_301/refgenome'
+    sys.argv = ['', 'refsequence.fa']
 #============= END OF FAKE STUFF ============================================
 
-if len(sys.argv)<2:
-    print('Usage: COMMAND Sourcefilename')
+if len(sys.argv) < 3:
+    print('Usage: COMMAND maxbasecount Sourcefilename')
     print('   Sourcefilename= fasta file')
     sys.exit()
 
-sourcefilename = sys.argv[1]
+
+input_maxbasecount = sys.argv[1]
+if input_maxbasecount != 'all':
+    maxbasecount = int(input_maxbasecount)
+
+
+sourcefilename = sys.argv[2]
 
 blockSizeStart = 1
 blockSizeIncrFactor = 2
@@ -145,6 +152,10 @@ while True:
             if basect % 500000 == 0:
                 print(str(basect))
             summariser.Add(base.upper())
+            if (maxbasecount > 0) and (basect > maxbasecount):
+                break
+    if (maxbasecount > 0) and (basect > maxbasecount):
+        break
 
 ifile.close()
 

@@ -112,9 +112,6 @@ class Summariser:
 
 
 
-
-
-
 #create output directory if necessary
 outputdir=os.path.join(basedir,'Summaries')
 if not os.path.exists(outputdir):
