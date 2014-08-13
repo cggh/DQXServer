@@ -31,7 +31,20 @@ class CASMiddleware(object):
     samlNamespaceUri = 'urn:oasis:names:tc:SAML:2.0:assertion'
 
 
-    def __init__(self, application, cas_root_url, entry_page = '/', logout_url = '/logout', logout_dest = '', protocol_version = 2, casfailed_url=None, session_store = None, ignore_redirect = None, ignored_callback = None, gateway_redirect = None, group_separator = ';', group_environ = 'HTTP_CAS_MEMBEROF'):
+    def __init__(self, application,
+                 cas_root_url,
+                 entry_page = '/',
+                 effective_url = None,
+                 logout_url = '/logout',
+                 logout_dest = '',
+                 protocol_version = 2,
+                 casfailed_url=None,
+                 session_store = None,
+                 ignore_redirect = None,
+                 ignored_callback = None,
+                 gateway_redirect = None,
+                 group_separator = ';',
+                 group_environ = 'HTTP_CAS_MEMBEROF'):
         self._application = application
         self._root_url = cas_root_url
         self._login_url = cas_root_url + '/login'
@@ -39,6 +52,7 @@ class CASMiddleware(object):
         self._sso_logout_url = cas_root_url + '/logout'
         self._logout_dest = logout_dest
         self._entry_page = entry_page
+        self._effective_url = effective_url
         self._protocol = protocol_version
         self._casfailed_url = casfailed_url
         self._session_store = session_store
@@ -162,7 +176,7 @@ class CASMiddleware(object):
                 # Have ticket, validate with CAS server
                 ticket = params['ticket']
 
-                service_url = request.url
+                service_url = self._effective_url or request.url
 
                 service_url = re.sub(r".ticket=" + ticket, "", service_url)
                 logging.debug('Service URL' + service_url)
@@ -212,7 +226,7 @@ class CASMiddleware(object):
                     self._set_session_var(CAS_GATEWAY, request.url)
                     self._save_session()
                 logging.debug('Does not have ticket redirecting')
-                service_url = request.url
+                service_url = self._effective_url or request.url
                 response.status = '302 Moved Temporarily'
                 response.headers['Location'] = '%s?service=%s%s' % (self._login_url, quote(service_url),is_gateway)
                 response.set_cookie(CAS_COOKIE_NAME, value = self._session.sid, max_age = None, expires = None)
