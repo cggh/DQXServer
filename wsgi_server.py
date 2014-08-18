@@ -37,6 +37,10 @@ try:
     cas_service = config.CAS_SERVICE
 except AttributeError:
     cas_service = ''
+try:
+    effective_url = config.CAS_EFFECTIVE_URL
+except AttributeError:
+    effective_url = None
 if cas_service != '':
     fs_session_store = FilesystemSessionStore()
     application = CASMiddleware(application,
@@ -45,6 +49,7 @@ if cas_service != '':
                               logout_dest = config.CAS_LOGOUT_DESTINATION,
                               protocol_version = config.CAS_VERSION,
                               casfailed_url = config.CAS_FAILURE_PAGE,
+                              effective_url = effective_url,
                               entry_page = '/index.html',
                               session_store = fs_session_store,
                               ignore_redirect = '(.*)\\api?datatype=',
