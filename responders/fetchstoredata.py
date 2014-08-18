@@ -11,7 +11,7 @@ import config
 
 def response(returndata):
     id = returndata['id']
-    with DQXDbTools.DBCursor(returndata, databaseName) as cur:
+    with DQXDbTools.DBCursor(returndata) as cur:
         sqlstring = 'SELECT content FROM storage WHERE id="{0}"'.format(id)
         cur.execute(sqlstring)
 
