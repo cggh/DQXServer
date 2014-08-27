@@ -33,15 +33,21 @@ identifierMatcher = re.compile(r"^[^\d\W][\w]*\Z")
 reservedTableNames = ['2D_propertycatalog', '2D_tablecatalog', 'annotation', 'chromosomes', 'externallinks', 'propertycatalog', 'relations', 'settings', 'storedqueries', 'storedsubsets', 'summaryvalues', 'tablebasedsummaryvalues', 'tablecatalog', 'workspaces']
 
 def CheckValidDatabaseIdentifier(id):
+    if len(id) == 0:
+        raise Exception('Invalid empty identifier')
     if re.match(identifierMatcher, id) is None:
         raise Exception('Invalid identifier: (syntax error) "'+id+'"')
 
 def CheckValidTableIdentifier(id):
+    if len(id) == 0:
+        raise Exception('Invalid empty identifier')
     if re.match(identifierMatcher, id) is None:
         raise Exception('Invalid identifier: (syntax error) "'+id+'"')
     if id in reservedTableNames:
         raise Exception('Invalid identifier: (reserved name) "' + id+'"')
 
 def CheckValidColumnIdentifier(id):
+    if len(id) == 0:
+        raise Exception('Invalid empty identifier')
     if re.match(identifierMatcher, id) is None:
         raise Exception('Invalid identifier: (syntax error) "'+id+'"')
