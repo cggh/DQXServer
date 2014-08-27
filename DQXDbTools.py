@@ -9,6 +9,7 @@ import MySQLdb
 import config
 import time
 
+MySQLMinVersion = [5, 6]
 
 LogRequests = True
 
