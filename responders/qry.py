@@ -41,10 +41,8 @@ def response(returndata):
             sqlquery += " ORDER BY {0}".format(DBCOLESC(myorderfield))
 
         if DQXDbTools.LogRequests:
-            DQXUtils.LogServer('################################################')
             DQXUtils.LogServer('###QRY:'+sqlquery)
             DQXUtils.LogServer('###PARAMS:'+str(whc.queryparams))
-            DQXUtils.LogServer('################################################')
         cur.execute(sqlquery, whc.queryparams)
 
         returndata['DataType'] = 'Points'

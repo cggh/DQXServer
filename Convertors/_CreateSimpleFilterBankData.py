@@ -45,7 +45,7 @@ class Level:
 
 class Summariser:
     def __init__(self, chromosome, encoder, blockSizeStart, blockSizeIncrFactor, blockSizeMax, outputFolder):
-        print('##### Start processing chromosome '+chromosome)
+        print('Chrom '+chromosome)
         self.encoder = encoder
         self.chromosome = chromosome
         self.outputFolder = outputFolder
@@ -184,7 +184,7 @@ while True:
         break
     else:
         linecount += 1
-        if linecount % 500000 ==0:
+        if linecount % 2000000 == 0:
             print(str(linecount))
     if (maxrowcount > 0) and (linecount > maxrowcount):
         break

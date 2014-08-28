@@ -60,10 +60,8 @@ def response(returndata):
         sqlquery += " LIMIT {0}, {1}".format(rownr1, rownr2-rownr1+1)
 
         if DQXDbTools.LogRequests:
-            DQXUtils.LogServer('################################################')
             DQXUtils.LogServer('###QRY:'+sqlquery)
             DQXUtils.LogServer('###PARAMS:'+str(whc.queryparams))
-            DQXUtils.LogServer('################################################')
 
         cur.execute(sqlquery, whc.queryparams)
 

@@ -27,10 +27,8 @@ def response(returndata):
         )
 
         if DQXDbTools.LogRequests:
-            DQXUtils.LogServer('################################################')
             DQXUtils.LogServer('###QRY:'+sqlquery)
             DQXUtils.LogServer('###PARAMS:'+str(whc.queryparams))
-            DQXUtils.LogServer('################################################')
 
 
         cur.execute(sqlquery, whc.queryparams)

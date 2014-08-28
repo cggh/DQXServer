@@ -39,10 +39,8 @@ def response(returndata):
         tm = DQXUtils.Timer()
 
         if DQXDbTools.LogRequests:
-            DQXUtils.LogServer('################################################')
             DQXUtils.LogServer('###QRY:'+sqlquery)
             DQXUtils.LogServer('###PARAMS:'+str(whc.queryparams))
-            DQXUtils.LogServer('################################################')
         cur.execute(sqlquery, whc.queryparams)
         # DQXUtils.LogServer('   finished in {0}s'.format(tm.Elapsed()))
         recordcount = cur.fetchone()[0]

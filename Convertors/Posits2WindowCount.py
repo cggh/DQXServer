@@ -26,7 +26,7 @@ hwinsize = int(sys.argv[2])
 
 class Handler:
     def __init__(self, chromosome, hwinsize, ofl):
-        print('##### Start processing chromosome '+chromosome)
+        print('Chrom '+chromosome)
         self.chromosome = chromosome
         self.hwinsize = hwinsize
         self.curwincent = self.hwinsize

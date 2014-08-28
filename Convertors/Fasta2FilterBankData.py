@@ -37,7 +37,7 @@ blockSizeMax = 40000
 
 class Summariser:
     def __init__(self, chromosome, blockSizeStart, blockSizeIncrFactor, blockSizeMax, outputFolder):
-        print('##### Start processing chromosome '+chromosome)
+        print('Chrom '+chromosome)
         self.chromosome = chromosome
         self.outputFolder = outputFolder
         self.lastpos=-1
@@ -149,7 +149,7 @@ while True:
     else:
         for base in line:
             basect += 1
-            if basect % 500000 == 0:
+            if basect % 5000000 == 0:
                 print(str(basect))
             summariser.Add(base.upper())
             if (maxbasecount > 0) and (basect > maxbasecount):
