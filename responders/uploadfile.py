@@ -13,6 +13,12 @@ import DQXUtils
 def response(returndata):
     environ=returndata['environ']
 
+    if ('CONTENT_LENGTH' not in environ) or (len(environ['CONTENT_LENGTH']) == 0):
+        returndata['Error'] = 'Failed to upload data: missing CONTENT_LENGTH'
+        DQXUtils.LogServer('Failed to upload data: missing CONTENT_LENGTH')
+        return returndata
+
+
     filesize = int(environ['CONTENT_LENGTH'])
 
     filename = str(uuid.uuid1())
