@@ -13,7 +13,7 @@ def application(environ, start_response):
 
     #Redirect to specific dataset
     path = environ['PATH_INFO'].split('/')
-    if len(path) >= 2 and path[-2] in datasets:
+    if len(path) >= 2 and path[-2] in datasets and not (len(path) >= 3 and path[-3] == "Docs"):
         start_response('301 Moved Permanently', [('Location', '../index.html?dataset='+path[-2]),])
         return
     if path[-1] in datasets:
