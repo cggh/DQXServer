@@ -23,6 +23,8 @@ mysqlcommand = 'mysql'
 # Command to invoke python
 pythoncommand = 'python'
 
+TIMEOUT = 60
+
 
 ###########################################################################################################
 #
