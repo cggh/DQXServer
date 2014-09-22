@@ -24,9 +24,10 @@ def _strict_dtype_string(dtype):
 #Convert a string array to a chain of null terminated strings
 def pack_string_array(array):
     result = ''
-    for string in np.nditer(array):
-        result += str(string)
-        result += chr(0)
+    if len(array) > 0:
+        for string in np.nditer(array):
+            result += str(string)
+            result += chr(0)
     return result
 
 def _encode_numpy_array(array):
