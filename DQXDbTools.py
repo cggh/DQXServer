@@ -296,7 +296,7 @@ class WhereClause:
 
     def _CreateSelectStatementSub_Comparison(self, statm):
         #TODO: check that statm['ColName'] corresponds to a valid column name in the table (to avoid SQL injection)
-        if not(statm['Tpe'] in ['=', '<>', '<', '>', '<=', '>=', '!=', 'LIKE', 'CONTAINS', 'NOTCONTAINS', 'STARTSWITH', 'ISPRESENT', 'ISABSENT', '=FIELD', '<>FIELD', '<FIELD', '>FIELD', 'between', 'ISEMPTYSTR', 'ISNOTEMPTYSTR', '_subset_']):
+        if not(statm['Tpe'] in ['=', '<>', '<', '>', '<=', '>=', '!=', 'LIKE', 'CONTAINS', 'NOTCONTAINS', 'STARTSWITH', 'ISPRESENT', 'ISABSENT', '=FIELD', '<>FIELD', '<FIELD', '>FIELD', 'between', 'ISEMPTYSTR', 'ISNOTEMPTYSTR', '_subset_', '_note_']):
             raise Exception("Invalid comparison statement {0}".format(statm['Tpe']))
 
         processed = False
@@ -372,13 +372,32 @@ class WhereClause:
         if statm['Tpe'] == '_subset_':
             processed = True
             querystr = '{primkey} IN (SELECT {primkey} FROM {subsettable} WHERE subsetid={subsetid})'.format(
-                primkey=DBCOLESC(statm['PrimKey']),
-                subsettable=DBTBESC(statm['SubsetTable']),
-                subsetid=statm['Subset']
+                primkey=DBCOLESC(ToSafeIdentifier(statm['PrimKey'])),
+                subsettable=DBTBESC(ToSafeIdentifier(statm['SubsetTable'])),
+                subsetid=ToSafeIdentifier(statm['Subset'])
             )
-            #querystr = 'True'
             self.querystring += querystr
             self.querystring_params += querystr
+
+        if statm['Tpe'] == '_note_':
+            processed = True
+
+            param = ToSafeIdentifier(statm['NoteText']) + '*'
+            if len(statm['NoteText']) == 0:
+                whereclause='TRUE'
+                pass
+            else:
+                whereclause = 'MATCH(`content`) AGAINST (__param__ IN BOOLEAN MODE)'
+                self.queryparams.append(param)
+
+            querystr = '{primkey} IN (SELECT `itemid` FROM `notes` WHERE (`tableid`="{tableid}") and ({whereclause}))'.format(
+#            querystr = '{primkey} IN (SELECT `itemid` FROM `notes` WHERE (`tableid`="{tableid}") and (`content` LIKE __param__))'.format(
+                whereclause=whereclause,
+                tableid=ToSafeIdentifier(statm['NoteItemTable']),
+                primkey=DBCOLESC(ToSafeIdentifier(statm['PrimKey']))
+            )
+            self.querystring += querystr.replace('__param__', '"' + param + '"')
+            self.querystring_params += querystr.replace('__param__', self.ParameterPlaceHolder)
 
         if not(processed):
             decoval = statm['CompValue']
