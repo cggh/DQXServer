@@ -117,7 +117,7 @@ encoderInfo = {"ID": "MultiCatCount", 'CatCount': len(categories), 'EncoderLen':
 encoder = DQXEncoder.GetEncoder(encoderInfo)
 
 
-propid=sourcefile.split('.')[0]
+propid=sourcefile
 
 cnf={}
 

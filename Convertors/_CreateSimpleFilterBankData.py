@@ -128,7 +128,7 @@ encoderInfo = {"ID":"Float2B64", "Len":2, "Min":minval, "Max":maxval}
 encoder = DQXEncoder.GetEncoder(encoderInfo)
 
 
-propid=sourcefile.split('.')[0]
+propid=sourcefile
 
 cnf={}
 
