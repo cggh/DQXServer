@@ -8,6 +8,7 @@ import DQXUtils
 from DQXDbTools import DBCOLESC
 from DQXDbTools import DBTBESC
 import config
+import lzstring
 
 
 def response(returndata):
@@ -16,8 +17,7 @@ def response(returndata):
     myorderfield = returndata['order']
     sortreverse = int(returndata['sortreverse']) > 0
     isdistinct = ('distinct' in returndata) and (int(returndata['distinct']) > 0)
-
-    mycolumns=DQXDbTools.ParseColumnEncoding(returndata['collist'])
+    mycolumns=DQXDbTools.ParseColumnEncoding(lzstring.decompressFromEncodedURIComponent(returndata['collist']))
 
     databaseName=None
     if 'database' in returndata:

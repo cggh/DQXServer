@@ -8,6 +8,7 @@ import DQXUtils
 from DQXDbTools import DBCOLESC
 from DQXDbTools import DBTBESC
 import config
+import lzstring
 
 def response(returndata):
 
@@ -17,7 +18,7 @@ def response(returndata):
     myorderfield = DQXDbTools.ToSafeIdentifier(returndata['order'])
     # DQXUtils.LogServer('orderfield: '+myorderfield)
 
-    mycolumns=DQXDbTools.ParseColumnEncoding(returndata['collist'])#!!!todo: verify that these column names are actual table columns
+    mycolumns=DQXDbTools.ParseColumnEncoding(lzstring.decompressFromEncodedURIComponent(returndata['collist']))
 
     databaseName = None
     if 'database' in returndata:
