@@ -128,16 +128,17 @@ class CredentialInformation:
                 self.userid = environ['REMOTE_USER']
             if 'HTTP_CAS_MEMBEROF' in environ:
                 cas_memberof = environ['HTTP_CAS_MEMBEROF'].strip('[]')
-                for groupStr in cas_memberof.split(';'):
-                    groupStr = groupStr.strip(' ')
-                    groupPath = []
-                    for tokenStr in groupStr.split(','):
-                        tokenStr = tokenStr.strip(' ')
-                        tokenid = tokenStr.split('=')[0]
-                        tokencontent = tokenStr.split('=')[1]
-                        if (tokenid == 'cn') or (tokenid == 'ou') or (tokenid == 'dc'):
-                            groupPath.append(tokencontent)
-                    self.groupids.append('.'.join(groupPath))
+                if cas_memberof and cas_memberof != 'None':
+                    for groupStr in cas_memberof.split(';'):
+                        groupStr = groupStr.strip(' ')
+                        groupPath = []
+                        for tokenStr in groupStr.split(','):
+                            tokenStr = tokenStr.strip(' ')
+                            tokenid = tokenStr.split('=')[0]
+                            tokencontent = tokenStr.split('=')[1]
+                            if (tokenid == 'cn') or (tokenid == 'ou') or (tokenid == 'dc'):
+                                groupPath.append(tokencontent)
+                        self.groupids.append('.'.join(groupPath))
 
 
     # operation is of type DbOperation
