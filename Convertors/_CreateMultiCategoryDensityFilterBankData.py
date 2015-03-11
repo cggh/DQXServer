@@ -20,7 +20,7 @@ basedir = '.'
 
 
 if len(sys.argv)<6:
-    print('Usage: COMMAND datafile blockSizeStart blockSizeIncrFactor blockSizeMax, Categories (; separated)')
+    print('Usage: COMMAND datafile blockSizeStart blockSizeIncrFactor blockSizeMax, Categories (; separated) maxrowcount')
     print('   datafile: format: chromosome\\tposition\\tvalue (no header)')
     sys.exit()
 
@@ -28,6 +28,11 @@ sourcefile = sys.argv[1]
 blockSizeStart = int(sys.argv[2])
 blockSizeIncrFactor = int(sys.argv[3])
 blockSizeMax = int(sys.argv[4])
+try:
+    maxrowcount = int(sys.argv[6])
+except:
+    maxrowcount = -1
+
 
 categories  = sys.argv[5].split(';')
 print('Categories: ' + str(categories))
@@ -163,6 +168,8 @@ while True:
         linecount += 1
         if linecount % 2000000 == 0:
             print(str(linecount))
+    if (maxrowcount > 0) and (linecount > maxrowcount):
+        break
     comps = line.split('\t')
     chromosome = comps[0]
     pos = int(float(comps[1]))
