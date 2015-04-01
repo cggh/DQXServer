@@ -15,7 +15,6 @@ def _getBaseValue(alphabet, character):
     return _baseReverseDic[alphabet][character]
 
 def decompressFromEncodedURIComponent(input):
-    print input
     if input is None:
         return ""
     if input == "":
