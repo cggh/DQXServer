@@ -14,7 +14,7 @@ import lzstring
 def response(returndata):
     mytablename = returndata['tbname']
     encodedquery = returndata['qry']
-    myorderfield = returndata['order']
+    myorderfield = returndata.get('order', None)
     sortreverse = int(returndata['sortreverse']) > 0
     isdistinct = ('distinct' in returndata) and (int(returndata['distinct']) > 0)
     mycolumns=DQXDbTools.ParseColumnEncoding(lzstring.decompressFromEncodedURIComponent(returndata['collist']))
@@ -55,7 +55,7 @@ def response(returndata):
         sqlquery += "{0} FROM {1}".format(','.join([DBCOLESC(x['Name']) for x in mycolumns]), DBTBESC(mytablename))
         if len(whc.querystring_params) > 0:
             sqlquery += " WHERE {0}".format(whc.querystring_params)
-        if len(myorderfield) > 0:
+        if myorderfield and len(myorderfield) > 0:
             sqlquery += " ORDER BY {0}".format(DQXDbTools.CreateOrderByStatement(myorderfield, sortreverse))
         sqlquery += " LIMIT {0}, {1}".format(rownr1, rownr2-rownr1+1)
 
