@@ -56,7 +56,7 @@ def response(returndata):
         sqlquery += "{0} FROM {1}".format(','.join([DBCOLESC(x['Name']) for x in mycolumns]), DBTBESC(mytablename))
         if len(whc.querystring_params) > 0:
             sqlquery += " WHERE {0}".format(whc.querystring_params)
-        if myorderfield and len(myorderfield) > 0:
+        if myorderfield and len(myorderfield) > 0 and myorderfield != 'null':
             sqlquery += " ORDER BY {0}".format(DQXDbTools.CreateOrderByStatement(myorderfield, sortreverse))
 
         if groupby and len(groupby) > 0:
