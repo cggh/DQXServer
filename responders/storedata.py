@@ -14,8 +14,7 @@ def response(returndata):
     id = str(uuid.uuid1())
 
     with DQXDbTools.DBCursor(returndata) as cur:
-        sqlstring = 'INSERT INTO storage (id,content) VALUES ("{0}","{1}")'.format(id, request_body)
-        cur.execute(sqlstring)
+        cur.execute('INSERT INTO storage (id,content) VALUES (%s,%s)', (id, request_body))
         cur.commit()
         returndata['id']=id
         return returndata

@@ -47,9 +47,9 @@ def response(returndata):
         typequerystring='(true)'
         queryparams = []
         if hasFeatureType:
-            typequerystring = ' OR '.join(['(ftype="{0}")'.format(item) for item in returndata['ftype'].split(',')])
+            typequerystring = ' OR '.join(["(ftype='{0}')".format(item) for item in returndata['ftype'].split(',')])
         if hasSubFeatures:
-            typequerystring += ' or (ftype="{1}")'.format(returndata['ftype'], returndata['fsubtype'])
+            typequerystring += " or (ftype='{1}')".format(returndata['ftype'], returndata['fsubtype'])
 
         if 'qry' in returndata:
             encodedquery = returndata['qry']
@@ -72,13 +72,14 @@ def response(returndata):
         if hasFeatureType:
             statement +=' ftype, fparentid'
         else:
-            statement +=' "_" as ftype, "_" as fparentid'
+            statement +=" '_' as ftype, '_' as fparentid"
 
         if hasExtraField1:
             statement +=', ' + extrafield1
 
 
-        statement += ' FROM {tablename} WHERE ({typequery}) and ({field_chrom}="{chromid}") and ({field_stop}>={start}) and ({field_start}<={stop}) ORDER BY {field_start}'.format(
+        statement += " FROM \"{tablename}\" WHERE ({typequery}) and ({field_chrom}='{chromid}') and ({field_stop}>={" \
+                     "start}) and ({field_start}<={stop}) ORDER BY {field_start}".format(
             typequery=typequerystring,
             tablename=tablename,
             chromid=DQXDbTools.ToSafeIdentifier(returndata['chrom']),

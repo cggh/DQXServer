@@ -33,7 +33,8 @@ def response(returndata):
         sqlquery="SELECT COUNT(*) FROM (SELECT * FROM {0}".format(DBTBESC(mytablename))
         if len(whc.querystring_params) > 0:
             sqlquery += " WHERE {0}".format(whc.querystring_params)
-        sqlquery += ' LIMIT '+str(maxrecordcount)
+        #Subquery limits not supported in monet
+        # sqlquery += ' LIMIT '+str(maxrecordcount)
         sqlquery += ') as tmp_table'
         # DQXUtils.LogServer('   executing count query...')
         tm = DQXUtils.Timer()
