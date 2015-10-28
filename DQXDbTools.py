@@ -5,11 +5,14 @@
 
 import simplejson
 import DQXbase64
-import MySQLdb
+import monetdb.sql
 import config
+#As we created the DB and it is only listening on localhost set these here
+config.DBUSER = 'monetdb'
+config.DBPASS = 'monetdb'
+config.DBSRV = 'localhost'
+config.DB = 'datasets'
 import time
-
-MySQLMinVersion = [5, 6]
 
 LogRequests = True
 
@@ -171,16 +174,18 @@ class Timeout(Exception):
 
 class DBCursor(object):
     def __init__(self, cred_data_or_cred=None, db=None, **kwargs):
+
+        #monet doesn't do timeouts this way, so disable for now
+        if 'read_timeout' in kwargs:
+            del kwargs['read_timeout']
+
         self.db_args = {
             'host': config.DBSRV,
-            'charset': 'utf8',
         }
-        if hasattr(config, 'DBUSER') and hasattr(config, 'DBPASS'):
-            self.db_args['user'] = config.DBUSER
-            self.db_args['passwd'] = config.DBPASS
-        else:
-            self.db_args['read_default_file'] = '~/.my.cnf'
-        self.db_args['db'] = db or config.DB
+        self.db_args['user'] = config.DBUSER
+        self.db_args['password'] = config.DBPASS
+        self.db_args['database'] = db or config.DB
+
         self.db_args.update(kwargs)
 
         if type(cred_data_or_cred) == type(CredentialInformation()):
@@ -192,13 +197,14 @@ class DBCursor(object):
         self.conn_id = None
 
     def __enter__(self):
-        self.credentials.VerifyCanDo(DbOperationRead(self.db_args['db']))
-        self.db = MySQLdb.connect(**self.db_args)
+        self.credentials.VerifyCanDo(DbOperationRead(self.db_args['database']))
+        self.db = monetdb.sql.connect(**self.db_args)
         if self.db_args.get('autocommit', False):
             self.db.autocommit(True)
         self.cursor = self.db.cursor()
-        self.cursor.execute("SELECT CONNECTION_ID();")
-        self.conn_id = self.cursor.fetchall()[0][0]
+        #Needed for timeout which is currently disabled
+        # self.cursor.execute("SELECT CONNECTION_ID();")
+        # self.conn_id = self.cursor.fetchall()[0][0]
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -206,28 +212,30 @@ class DBCursor(object):
         self.db.close()
 
     def execute(self, query, params=None):
-        if 'read_timeout' not in self.db_args:
+        #TODO - reinstate this mechanism for monet
+        # if 'read_timeout' not in self.db_args:
+            print query
             return self.cursor.execute(query, params)
-        else:
-            timeout = self.db_args['read_timeout']
-            t = time.time()
-            try:
-                return self.cursor.execute(query, params)
-            except MySQLdb.OperationalError as e:
-                if e[0] == 2013: #Check specific error code (Lost connection)
-                    #As the MYSQL API doesn't tell us this is a timeout or not we
-                    #guess based on the fact that the exception was raised just
-                    # when we expect it to be.... yeah I know.
-                    duration = (time.time() - t)
-                    #Re-connect and kill the query
-                    self.db = MySQLdb.connect(**self.db_args)
-                    self.cursor = self.db.cursor()
-                    self.cursor.execute("KILL %s", (self.conn_id,))
-                    #Give 50ms grace in either dir
-                    if (duration > timeout - 0.05) and (duration < timeout + 0.05):
-                        raise Timeout
-
-                raise e
+        # else:
+        #     timeout = self.db_args['read_timeout']
+        #     t = time.time()
+        #     try:
+        #         return self.cursor.execute(query, params)
+        #     except MySQLdb.OperationalError as e:
+        #         if e[0] == 2013: #Check specific error code (Lost connection)
+        #             #As the MYSQL API doesn't tell us this is a timeout or not we
+        #             #guess based on the fact that the exception was raised just
+        #             # when we expect it to be.... yeah I know.
+        #             duration = (time.time() - t)
+        #             #Re-connect and kill the query
+        #             self.db = MySQLdb.connect(**self.db_args)
+        #             self.cursor = self.db.cursor()
+        #             self.cursor.execute("KILL %s", (self.conn_id,))
+        #             #Give 50ms grace in either dir
+        #             if (duration > timeout - 0.05) and (duration < timeout + 0.05):
+        #                 raise Timeout
+        #
+        #         raise e
 
     def commit(self):
         self.db.commit()
@@ -247,13 +255,13 @@ def ToSafeIdentifier(st):
 def DBCOLESC(arg):
     if arg == "count(*)":
         return arg
-    return '`'+ToSafeIdentifier(arg)+'`'
+    return '"'+ToSafeIdentifier(arg)+'"'
 
 def DBTBESC(arg):
-    return '`'+ToSafeIdentifier(arg)+'`'
+    return '"'+ToSafeIdentifier(arg)+'"'
 
 def DBDBESC(arg):
-    return '`'+ToSafeIdentifier(arg)+'`'
+    return '"'+ToSafeIdentifier(arg)+'"'
 
 #parse column encoding information
 def ParseColumnEncoding(columnstr):

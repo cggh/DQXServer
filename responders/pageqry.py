@@ -58,10 +58,10 @@ def response(returndata):
             sqlquery += " WHERE {0}".format(whc.querystring_params)
         if myorderfield and len(myorderfield) > 0:
             sqlquery += " ORDER BY {0}".format(DQXDbTools.CreateOrderByStatement(myorderfield, sortreverse))
+
         if groupby and len(groupby) > 0:
             sqlquery += " GROUP BY " + ','.join(map(DBCOLESC, groupby.split('~')))
-        sqlquery += " LIMIT {0}, {1}".format(rownr1, rownr2-rownr1+1)
-
+        sqlquery += " LIMIT {0} OFFSET {1}".format(rownr2-rownr1+1, rownr1)
 
         if DQXDbTools.LogRequests:
             DQXUtils.LogServer('###QRY:'+sqlquery)
