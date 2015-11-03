@@ -181,6 +181,7 @@ class DBCursor(object):
 
         self.db_args = {
             'host': config.DBSRV,
+            'autocommit': True
         }
         self.db_args['user'] = config.DBUSER
         self.db_args['password'] = config.DBPASS
@@ -199,8 +200,7 @@ class DBCursor(object):
     def __enter__(self):
         self.credentials.VerifyCanDo(DbOperationRead(self.db_args['database']))
         self.db = monetdb.sql.connect(**self.db_args)
-        if self.db_args.get('autocommit', False):
-            self.db.autocommit(True)
+        self.db.autocommit = self.db_args.get('autocommit', False)
         self.cursor = self.db.cursor()
         #Needed for timeout which is currently disabled
         # self.cursor.execute("SELECT CONNECTION_ID();")
@@ -214,8 +214,18 @@ class DBCursor(object):
     def execute(self, query, params=None):
         #TODO - reinstate this mechanism for monet
         # if 'read_timeout' not in self.db_args:
-            print query
-            return self.cursor.execute(query, params)
+            retry = True
+            while retry:
+                try:
+                    print repr(query), repr(params)
+                    result = self.cursor.execute(query, params)
+                    retry = False
+                except monetdb.sql.ProgrammingError as e:
+                    if '40000' in str(e):
+                        retry = True
+                    else:
+                        raise e
+            return result
         # else:
         #     timeout = self.db_args['read_timeout']
         #     t = time.time()
@@ -238,7 +248,8 @@ class DBCursor(object):
         #         raise e
 
     def commit(self):
-        self.db.commit()
+        if not self.db.autocommit:
+            self.db.commit()
 
     def __getattr__(self, attrname):
         return getattr(self.cursor, attrname)   # Delegate to actual cursor
