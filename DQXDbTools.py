@@ -217,7 +217,7 @@ class DBCursor(object):
             retry = True
             while retry:
                 try:
-                    print repr(query), repr(params)
+                    # print repr(query), repr(params)
                     result = self.cursor.execute(query, params)
                     retry = False
                 except monetdb.sql.ProgrammingError as e:
