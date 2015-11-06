@@ -70,6 +70,7 @@ def application(environ, start_response):
         del response['environ']
         response = simplejson.dumps(response, use_decimal=True)
         response_headers = [('Content-type', 'application/json'),
+                            ('Access-Control-Allow-Origin','*'),
                             ('Content-Length', str(len(response)))]
         start_response(status, response_headers)
         yield response
