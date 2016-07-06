@@ -6,6 +6,7 @@ from urlparse import parse_qs
 import importlib
 import simplejson
 import os
+import traceback
 
 import DQXUtils
 import DQXDbTools
@@ -49,30 +50,36 @@ def application(environ, start_response):
     request_data['environ'] = environ
     response = request_data
     try:
-        response = responder.response(request_data)
-        status = '200 OK'
-    except DQXDbTools.CredentialException as e:
-        print('CREDENTIAL EXCEPTION: '+str(e))
-        response['Error'] = 'Credential problem: ' + str(e)
-        #Really should be 403 - but I think the JS will break as it expects 200
-        #status = '403 Forbidden'
-        status = '200 OK'
-    except DQXDbTools.Timeout as e:
-        status = '504 Gateway Timeout'
+        try:
+            response = responder.response(request_data)
+            status = '200 OK'
+        except DQXDbTools.CredentialException as e:
+            print('CREDENTIAL EXCEPTION: '+str(e))
+            response['Error'] = 'Credential problem: ' + str(e)
+            #Really should be 403 - but I think the JS will break as it expects 200
+            #status = '403 Forbidden'
+            status = '200 OK'
+        except DQXDbTools.Timeout as e:
+            status = '504 Gateway Timeout'
 
-    #Check for a custom response (eg in downloadtable)
-    if 'handler' in dir(responder):
-        for item in responder.handler(start_response, response):
-            yield item
+        #Check for a custom response (eg in downloadtable)
+        if 'handler' in dir(responder):
+            for item in responder.handler(start_response, response):
+                yield item
 
-    else:
-    #Default is to respond with JSON
-        del response['environ']
-        response = simplejson.dumps(response, use_decimal=True)
-        response_headers = [('Content-type', 'application/json'),
-                            ('Access-Control-Allow-Origin','*'),
-                            ('Content-Length', str(len(response)))]
-        start_response(status, response_headers)
-        yield response
+        else:
+        #Default is to respond with JSON
+            del response['environ']
+            response = simplejson.dumps(response, use_decimal=True)
+            response_headers = [('Content-type', 'application/json'),
+                                ('Access-Control-Allow-Origin','*'),
+                                ('Content-Length', str(len(response)))]
+            start_response(status, response_headers)
+            yield response
+    except Exception as e:
+        start_response('500 Server Error', [])
+        traceback.print_exc()
+        yield str(e)
+
 
     DQXUtils.LogServer('Responded to {0} in wall={1}s cpu={2}s'.format(request_type, tm.Elapsed(),tm.ElapsedCPU()))
