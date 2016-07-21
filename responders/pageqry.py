@@ -18,6 +18,7 @@ def response(returndata):
     sortreverse = int(returndata['sortreverse']) > 0
     isdistinct = ('distinct' in returndata) and (int(returndata['distinct']) > 0)
     mycolumns=DQXDbTools.ParseColumnEncoding(lzstring.decompressFromEncodedURIComponent(returndata['collist']))
+    groupby = returndata.get('groupby', None)
 
     databaseName=None
     if 'database' in returndata:
@@ -57,7 +58,10 @@ def response(returndata):
             sqlquery += " WHERE {0}".format(whc.querystring_params)
         if myorderfield and len(myorderfield) > 0:
             sqlquery += " ORDER BY {0}".format(DQXDbTools.CreateOrderByStatement(myorderfield, sortreverse))
+        if groupby and len(groupby) > 0:
+            sqlquery += " GROUP BY " + ','.join(map(DBCOLESC, groupby.split('~')))
         sqlquery += " LIMIT {0}, {1}".format(rownr1, rownr2-rownr1+1)
+
 
         if DQXDbTools.LogRequests:
             DQXUtils.LogServer('###QRY:'+sqlquery)

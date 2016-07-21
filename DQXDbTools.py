@@ -238,13 +238,15 @@ class DBCursor(object):
 
 def ToSafeIdentifier(st):
     st = str(st)
-    removelist=['"', "'", ';', '(', ')', '`']
+    removelist=['"', "'", ';', '`', '\x00', '\n', '\r', '\x1a']
     for it in removelist:
         st = st.replace(it, "")
     return st
 
 
 def DBCOLESC(arg):
+    if arg == "count(*)":
+        return arg
     return '`'+ToSafeIdentifier(arg)+'`'
 
 def DBTBESC(arg):
