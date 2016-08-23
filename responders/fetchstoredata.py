@@ -12,7 +12,7 @@ import config
 def response(returndata):
     id = returndata['id']
     with DQXDbTools.DBCursor(returndata) as cur:
-        sqlstring = 'SELECT content FROM storage WHERE id="{0}"'.format(id)
+        sqlstring = "SELECT content FROM storage WHERE id='{0}'".format(id)
         cur.execute(sqlstring)
 
         therow = cur.fetchone()
