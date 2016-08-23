@@ -438,12 +438,13 @@ class WhereClause:
                 DBCOLESC(statm['ColName']),
                 ToSafeIdentifier(operatorstr),
                 self.ParameterPlaceHolder)
-            needquotes = (type(decoval) is not float) and (type(decoval) is not int)
+            needquotes = (type(decoval) is not float) and (type(decoval) is not int) and (type(decoval) is not bool)
+            needstring = type(decoval) is not bool
             if needquotes:
                 self.querystring += "'"
                 decoval = decoval.replace("'", "")
-            else:
-                decoval = ToSafeIdentifier(decoval)
+            elif needstring:
+                decoval = ToSafeIdentifier(str(decoval))
             self.querystring += str(decoval)
             if needquotes:
                 self.querystring += "'"
