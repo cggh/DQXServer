@@ -264,7 +264,7 @@ def ToSafeIdentifier(st):
 
 
 def DBCOLESC(arg):
-    if arg == "count(*)":
+    if arg == "*":
         return arg
     return '"'+ToSafeIdentifier(arg)+'"'
 
@@ -289,9 +289,10 @@ class WhereClause:
         self.ParameterPlaceHolder = "?" #determines what is the placeholder for a parameter to be put in an sql where clause string
 
     #Decodes an url compatible encoded query into the statement tree
-    def Decode(self, encodedstr):
-        decodedstr = DQXbase64.b64decode_var2(encodedstr)
-        self.query = simplejson.loads(decodedstr)
+    def Decode(self, str, noBase64=False):
+        if not noBase64:
+            str = DQXbase64.b64decode_var2(str)
+        self.query = simplejson.loads(str)
         pass
 
     #Creates an SQL where clause string out of the statement tree
@@ -479,3 +480,17 @@ def CreateOrderByStatement(orderstr,reverse=False):
     # opten 2 = sloppier, a lot faster
 #    return ', '.join( [ "IF(ISNULL({0}),1,0),{0}{1}".format(DBCOLESC(field),dirstr) for field in orderstr.split('~') ] )
     return ', '.join( [ "{0}{1}".format(DBCOLESC(field), dirstr) for field in orderstr.split('~') ] )
+
+def desciptionToDType(desc):
+    col_type = desc[1]
+    dtype = {
+        'boolean': '?',
+        'tinyint': 'i1',
+        'char': 'u1',
+        'int': 'i4',
+        'bigint': 'i8',
+        'double': 'f8',
+        'float': 'f8',
+        'real': 'f4',
+    }
+    return dtype.get(col_type,None)
