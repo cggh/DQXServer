@@ -485,12 +485,13 @@ def desciptionToDType(desc):
     col_type = desc[1]
     dtype = {
         'boolean': '?',
-        'tinyint': 'i1',
         'char': 'u1',
+        'tinyint': 'i1',
+        'smallint': 'i2',
         'int': 'i4',
-        'bigint': 'i8',
         'double': 'f8',
         'float': 'f8',
         'real': 'f4',
+        'wrd': 'i4' #Monet returns this type for count(*) - it is 64bit but that is not supported by JS
     }
-    return dtype.get(col_type,None)
+    return dtype[col_type]
