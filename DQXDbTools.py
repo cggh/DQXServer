@@ -492,6 +492,7 @@ def desciptionToDType(desc):
         'double': 'f8',
         'float': 'f8',
         'real': 'f4',
-        'wrd': 'i4' #Monet returns this type for count(*) - it is 64bit but that is not supported by JS
+        'wrd': 'i4', #Monet returns this type for count(*) - it is 64bit but that is not supported by JS
+        'clob': 'S'
     }
     return dtype[col_type]
