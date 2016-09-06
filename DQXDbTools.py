@@ -484,7 +484,7 @@ def CreateOrderByStatement(orderstr,reverse=False):
 def desciptionToDType(desc):
     col_type = desc[1]
     dtype = {
-        'boolean': '?',
+        'boolean': 'i1',
         'char': 'u1',
         'tinyint': 'i1',
         'smallint': 'i2',
